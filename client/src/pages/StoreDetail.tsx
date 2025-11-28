@@ -55,6 +55,7 @@ export default function StoreDetail() {
       setReviewComment("");
       queryClient.invalidateQueries({ queryKey: ["/api/stores", id, "reviews"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stores", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stores"] });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
