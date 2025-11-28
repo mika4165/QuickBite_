@@ -1,7 +1,31 @@
 # QuickBite - Smart Meal Pre-Order System
 
 ## Overview
-QuickBite is a comprehensive meal pre-order system designed for school canteens. It allows students to browse stores, pre-order meals, pay via GCash QR code, and pick up their orders at scheduled times. Staff can manage orders, menus, and communicate with customers in real-time.
+QuickBite is a comprehensive meal pre-order system designed for school canteens with a **payment-first workflow**. Students browse stores, select meals, pay via GCash QR code (upload payment proof), and staff confirms orders before pickup. The system includes real-time per-order messaging, store reviews, and a staff portal for order management.
+
+## Key Features - All Working ✅
+
+1. **Student Flow**
+   - Browse stores with ratings and images
+   - Store-first ordering (select store → view menu)
+   - Add meals to cart with pickup time selection
+   - **GCash QR Code Payment**: Scan QR code, upload payment screenshot
+   - Track order status and communicate with staff
+   - Rate stores (1-5 stars with comments)
+
+2. **Staff Portal**
+   - Apply to work at any store via `/staff-signup`
+   - Upload/manage store GCash QR code
+   - View pending orders organized by pickup time
+   - Verify payment proofs before confirming
+   - Real-time messaging with customers per order
+   - Manage menu items with images and availability
+
+3. **Core System**
+   - Replit Auth for secure login
+   - Real-time messaging between students & staff (per order)
+   - Order status tracking (Pending → Confirmed → Ready → Claimed)
+   - File uploads for QR codes, payment proofs, meal images
 
 ## Architecture
 
@@ -42,22 +66,33 @@ QuickBite is a comprehensive meal pre-order system designed for school canteens.
 - **messages**: Real-time messaging per order
 - **sessions**: Authentication sessions
 
-## Key Features
-1. **Student Flow**:
-   - Browse stores and menus
-   - Add meals to cart
-   - Select pickup time
-   - Pay via GCash (upload payment proof)
-   - Track order status
-   - Message store staff
+## Payment-First Workflow (Core Innovation)
 
-2. **Staff Flow**:
-   - View incoming orders
-   - Verify payment proofs
-   - Update order status
-   - Communicate with customers
-   - Manage menu items
-   - Update GCash QR code
+1. **Student Places Order**
+   - Browse stores → Select store → Browse menu → Add to cart
+   - Choose pickup time and confirm
+   - Go to checkout
+
+2. **GCash Payment Step** (CRITICAL)
+   - See store's GCash QR code
+   - Scan and send payment amount
+   - Take screenshot of proof (transaction ID visible)
+   - Upload payment proof screenshot
+
+3. **Staff Verification**
+   - Staff sees order with "payment_submitted" status
+   - Verifies payment proof screenshot
+   - Confirms order → Status changes to "confirmed"
+   
+4. **Fulfillment**
+   - Order moves to "ready" when prepared
+   - Student picks up → Order marked "claimed"
+
+## Real-Time Features
+
+- **Per-Order Messaging**: Students & staff can chat about each order
+- **Live Order Tracking**: Status updates in real-time
+- **Instant Notifications**: Auto-refresh every 3-5 seconds
 
 ## API Endpoints
 

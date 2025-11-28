@@ -63,20 +63,8 @@ export const meals = pgTable("meals", {
   imageUrl: varchar("image_url"),
   isAvailable: boolean("is_available").default(true),
   category: varchar("category", { length: 100 }),
-  quantity: integer("quantity").default(999), // inventory stock
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// Meal ratings table for individual meal reviews
-export const mealRatings = pgTable("meal_ratings", {
-  id: serial("id").primaryKey(),
-  mealId: integer("meal_id").references(() => meals.id).notNull(),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  rating: integer("rating").notNull(), // 1-5
-  comment: text("comment"),
-  photoUrl: varchar("photo_url"), // photo of the meal
-  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Orders table
@@ -148,18 +136,6 @@ export const mealsRelations = relations(meals, ({ one, many }) => ({
     references: [stores.id],
   }),
   orderItems: many(orderItems),
-  ratings: many(mealRatings),
-}));
-
-export const mealRatingsRelations = relations(mealRatings, ({ one }) => ({
-  meal: one(meals, {
-    fields: [mealRatings.mealId],
-    references: [meals.id],
-  }),
-  user: one(users, {
-    fields: [mealRatings.userId],
-    references: [users.id],
-  }),
 }));
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
@@ -226,11 +202,6 @@ export const insertMealSchema = createInsertSchema(meals).omit({
   updatedAt: true,
 });
 
-export const insertMealRatingSchema = createInsertSchema(mealRatings).omit({
-  id: true,
-  createdAt: true,
-});
-
 export const insertOrderSchema = createInsertSchema(orders).omit({
   id: true,
   createdAt: true,
@@ -266,16 +237,9 @@ export type InsertRating = z.infer<typeof insertRatingSchema>;
 export type Rating = typeof ratings.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
-export type InsertMealRating = z.infer<typeof insertMealRatingSchema>;
-export type MealRating = typeof mealRatings.$inferSelect;
 
 // Extended types for frontend
 export type StoreWithRating = Store & {
-  averageRating: number;
-  ratingCount: number;
-};
-
-export type MealWithRating = Meal & {
   averageRating: number;
   ratingCount: number;
 };
