@@ -2,8 +2,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import session from "express-session";
 import type { Express, RequestHandler } from "express";
-import MySQLStore from "express-mysql-session";
-import { createPool } from "mysql2/promise";
+import sessionMemory from "memorystore";
 import { storage } from "./storage";
 import crypto from "crypto";
 
@@ -17,38 +16,16 @@ const verifyPassword = (password: string, hash: string): boolean => {
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-
-  // Parse DATABASE_URL for MySQL connection
-  const url = new URL(process.env.DATABASE_URL || "mysql://root@localhost/quick_app");
-  const sessionPool = createPool({
-    host: url.hostname || "localhost",
-    user: url.username || "root",
-    password: url.password || "",
-    database: url.pathname?.slice(1) || "quick_app",
-    waitForConnections: true,
-    connectionLimit: 5,
-    queueLimit: 0,
+  
+  // Create MemoryStore with session
+  const MemoryStore = sessionMemory(session);
+  const memoryStore = new MemoryStore({
+    checkPeriod: 86400000, // prune expired entries every 24h
   });
-
-  const sessionStore = new MySQLStore(
-    {
-      expiration: sessionTtl,
-      createDatabaseTable: true,
-      schema: {
-        tableName: "sessions",
-        columnNames: {
-          session_id: "session_id",
-          expires: "expires",
-          data: "data",
-        },
-      },
-    },
-    sessionPool
-  );
 
   return session({
     secret: process.env.SESSION_SECRET!,
-    store: sessionStore,
+    store: memoryStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
