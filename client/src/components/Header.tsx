@@ -125,9 +125,9 @@ export function Header() {
               <a href="https://forms.gle/QotJYMzE85Lqe1Xj6" target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" data-testid="button-be-merchant">Be a Merchant</Button>
               </a>
-              <Link href="/login">
+              <a href="/api/login">
                 <Button data-testid="button-login">Log In</Button>
-              </Link>
+              </a>
             </div>
           )}
         </div>

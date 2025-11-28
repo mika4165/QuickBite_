@@ -69,7 +69,9 @@ export default function Home() {
             </div>
             <h3 className="font-semibold text-lg mb-2">No stores found</h3>
             <p className="text-muted-foreground">
-              {searchQuery ? "Try adjusting your search" : "No stores are available"}
+              {searchQuery
+                ? "Try adjusting your search"
+                : "No stores are available at the moment"}
             </p>
           </div>
         )}

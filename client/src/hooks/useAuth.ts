@@ -1,35 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { getQueryFn } from "@/lib/queryClient";
 import type { User } from "@shared/schema";
 
 export function useAuth() {
-  const [isReady, setIsReady] = useState(false);
-
   const { data: user, isLoading } = useQuery<User | null>({
     queryKey: ["/api/auth/user"],
-    queryFn: async () => {
-      try {
-        const res = await fetch("/api/auth/user", {
-          credentials: "include",
-        });
-        if (!res.ok) return null;
-        return res.json();
-      } catch {
-        return null;
-      }
-    },
+    queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
+    staleTime: 5 * 60 * 1000,
   });
 
-  useEffect(() => {
-    if (!isLoading) {
-      setIsReady(true);
-    }
-  }, [isLoading]);
-
   return {
-    user: user || null,
+    user,
+    isLoading,
     isAuthenticated: !!user,
-    isLoading: !isReady,
   };
 }

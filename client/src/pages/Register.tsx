@@ -17,6 +17,7 @@ export default function Register() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validation
     if (!email || !password || !confirmPassword) {
       toast({
         title: "Error",
@@ -155,6 +156,10 @@ export default function Register() {
             </Button>
           </div>
         </Card>
+
+        <p className="text-xs text-muted-foreground text-center mt-6">
+          Secure email/password authentication • Your data is stored safely
+        </p>
       </div>
     </div>
   );

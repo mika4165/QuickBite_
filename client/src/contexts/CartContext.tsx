@@ -1,64 +1,103 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useCallback } from "react";
+import type { Meal, Store } from "@shared/schema";
 
 export interface CartItem {
-  mealId: number;
-  name: string;
-  price: string;
+  meal: Meal;
   quantity: number;
 }
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: CartItem) => void;
+  store: Store | null;
+  addItem: (meal: Meal, store: Store) => void;
   removeItem: (mealId: number) => void;
   updateQuantity: (mealId: number, quantity: number) => void;
-  clear: () => void;
+  clearCart: () => void;
+  getTotalAmount: () => number;
   getTotalItems: () => number;
-  getTotalPrice: () => string;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [store, setStore] = useState<Store | null>(null);
 
-  const addItem = (item: CartItem) => {
+  const addItem = useCallback((meal: Meal, newStore: Store) => {
     setItems((prev) => {
-      const existing = prev.find((i) => i.mealId === item.mealId);
+      if (store && store.id !== newStore.id) {
+        setStore(newStore);
+        return [{ meal, quantity: 1 }];
+      }
+      
+      const existing = prev.find((item) => item.meal.id === meal.id);
       if (existing) {
-        return prev.map((i) =>
-          i.mealId === item.mealId ? { ...i, quantity: i.quantity + item.quantity } : i
+        return prev.map((item) =>
+          item.meal.id === meal.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
         );
       }
-      return [...prev, item];
+      
+      if (!store) {
+        setStore(newStore);
+      }
+      
+      return [...prev, { meal, quantity: 1 }];
     });
-  };
+  }, [store]);
 
-  const removeItem = (mealId: number) => {
-    setItems((prev) => prev.filter((i) => i.mealId !== mealId));
-  };
+  const removeItem = useCallback((mealId: number) => {
+    setItems((prev) => {
+      const filtered = prev.filter((item) => item.meal.id !== mealId);
+      if (filtered.length === 0) {
+        setStore(null);
+      }
+      return filtered;
+    });
+  }, []);
 
-  const updateQuantity = (mealId: number, quantity: number) => {
+  const updateQuantity = useCallback((mealId: number, quantity: number) => {
     if (quantity <= 0) {
       removeItem(mealId);
-    } else {
-      setItems((prev) =>
-        prev.map((i) => (i.mealId === mealId ? { ...i, quantity } : i))
-      );
+      return;
     }
-  };
+    setItems((prev) =>
+      prev.map((item) =>
+        item.meal.id === mealId ? { ...item, quantity } : item
+      )
+    );
+  }, [removeItem]);
 
-  const clear = () => setItems([]);
+  const clearCart = useCallback(() => {
+    setItems([]);
+    setStore(null);
+  }, []);
 
-  const getTotalItems = () => items.reduce((sum, item) => sum + item.quantity, 0);
+  const getTotalAmount = useCallback(() => {
+    return items.reduce(
+      (total, item) => total + parseFloat(item.meal.price) * item.quantity,
+      0
+    );
+  }, [items]);
 
-  const getTotalPrice = () => {
-    const total = items.reduce((sum, item) => sum + parseFloat(item.price) * item.quantity, 0);
-    return total.toFixed(2);
-  };
+  const getTotalItems = useCallback(() => {
+    return items.reduce((total, item) => total + item.quantity, 0);
+  }, [items]);
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clear, getTotalItems, getTotalPrice }}>
+    <CartContext.Provider
+      value={{
+        items,
+        store,
+        addItem,
+        removeItem,
+        updateQuantity,
+        clearCart,
+        getTotalAmount,
+        getTotalItems,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );
@@ -67,7 +106,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 export function useCart() {
   const context = useContext(CartContext);
   if (!context) {
-    throw new Error("useCart must be used within CartProvider");
+    throw new Error("useCart must be used within a CartProvider");
   }
   return context;
 }

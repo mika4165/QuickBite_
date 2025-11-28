@@ -1,19 +1,23 @@
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export function ThemeToggle() {
-  const [isDark, setIsDark] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
-    const isDarkMode = document.documentElement.classList.contains("dark");
-    setIsDark(isDarkMode);
+    const stored = localStorage.getItem("theme") as "light" | "dark" | null;
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const initial = stored || (prefersDark ? "dark" : "light");
+    setTheme(initial);
+    document.documentElement.classList.toggle("dark", initial === "dark");
   }, []);
 
   const toggleTheme = () => {
-    const isDarkMode = document.documentElement.classList.toggle("dark");
-    setIsDark(isDarkMode);
-    localStorage.setItem("theme", isDarkMode ? "dark" : "light");
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    localStorage.setItem("theme", next);
+    document.documentElement.classList.toggle("dark", next === "dark");
   };
 
   return (
@@ -23,7 +27,11 @@ export function ThemeToggle() {
       onClick={toggleTheme}
       data-testid="button-theme-toggle"
     >
-      {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      {theme === "light" ? (
+        <Moon className="h-5 w-5" />
+      ) : (
+        <Sun className="h-5 w-5" />
+      )}
     </Button>
   );
 }

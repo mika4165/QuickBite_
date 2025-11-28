@@ -1,39 +1,58 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-const queryClient = new QueryClient({
+async function throwIfResNotOk(res: Response) {
+  if (!res.ok) {
+    const text = (await res.text()) || res.statusText;
+    throw new Error(`${res.status}: ${text}`);
+  }
+}
+
+export async function apiRequest<T = Response>(
+  method: string,
+  url: string,
+  data?: unknown | undefined,
+): Promise<T> {
+  const res = await fetch(url, {
+    method,
+    headers: data ? { "Content-Type": "application/json" } : {},
+    body: data ? JSON.stringify(data) : undefined,
+    credentials: "include",
+  });
+
+  await throwIfResNotOk(res);
+  return res.json();
+}
+
+type UnauthorizedBehavior = "returnNull" | "throw";
+export const getQueryFn: <T>(options: {
+  on401: UnauthorizedBehavior;
+}) => QueryFunction<T> =
+  ({ on401: unauthorizedBehavior }) =>
+  async ({ queryKey }) => {
+    const url = queryKey.map(String).join("/");
+    const res = await fetch(url, {
+      credentials: "include",
+    });
+
+    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+      return null;
+    }
+
+    await throwIfResNotOk(res);
+    return await res.json();
+  };
+
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5,
-      gcTime: 1000 * 60 * 10,
-      retry: 1,
+      queryFn: getQueryFn({ on401: "throw" }),
+      refetchInterval: false,
       refetchOnWindowFocus: false,
+      staleTime: Infinity,
+      retry: false,
     },
     mutations: {
-      retry: 1,
+      retry: false,
     },
   },
 });
-
-async function apiRequest<T = any>(
-  method: string,
-  path: string,
-  body?: any
-): Promise<T> {
-  const response = await fetch(path, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Request failed");
-  }
-
-  return response.json();
-}
-
-export { queryClient, apiRequest };

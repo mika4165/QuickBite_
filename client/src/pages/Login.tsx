@@ -28,7 +28,9 @@ export default function Login() {
 
       if (response.ok) {
         toast({ title: "Login successful!" });
+        // Invalidate auth cache to refresh user data
         await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+        // Redirect - the Router will handle role-based routing
         setLocation("/");
       } else {
         const data = await response.json();
@@ -99,6 +101,15 @@ export default function Login() {
             </Button>
           </form>
 
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-card text-muted-foreground">or</span>
+            </div>
+          </div>
+
           <div className="space-y-4 mb-6">
             <div>
               <h3 className="text-sm font-semibold mb-2">New Customer?</h3>
@@ -116,9 +127,9 @@ export default function Login() {
 
           <div className="pt-4 border-t border-border">
             <p className="text-xs text-muted-foreground text-center mb-3">
-              Are you a merchant? Contact the admin to apply
+              Are you a merchant? Contact the admin to apply via the form
             </p>
-            <a href="https://forms.gle/QotJYMzE85Lqe1Xj6" target="_blank" rel="noopener noreferrer">
+            <a href="https://forms.google.com/your-merchant-form-url" target="_blank" rel="noopener noreferrer">
               <Button variant="ghost" size="sm" className="w-full text-xs" data-testid="button-merchant-form">
                 Merchant Application Form
               </Button>
@@ -127,7 +138,7 @@ export default function Login() {
         </Card>
 
         <p className="text-xs text-muted-foreground text-center mt-6">
-          Secure email/password authentication
+          Secure email/password authentication • Your data is stored safely
         </p>
       </div>
     </div>
