@@ -2,7 +2,8 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import session from "express-session";
 import type { Express, RequestHandler } from "express";
-import connectPg from "connect-pg-simple";
+import MySQLStore from "express-mysql-session";
+import { createPool } from "mysql2/promise";
 import { storage } from "./storage";
 import crypto from "crypto";
 
@@ -16,13 +17,35 @@ const verifyPassword = (password: string, hash: string): boolean => {
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  const pgStore = connectPg(session);
-  const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
-    ttl: sessionTtl,
-    tableName: "sessions",
+
+  // Parse DATABASE_URL for MySQL connection
+  const url = new URL(process.env.DATABASE_URL || "mysql://root@localhost/quick_app");
+  const sessionPool = createPool({
+    host: url.hostname || "localhost",
+    user: url.username || "root",
+    password: url.password || "",
+    database: url.pathname?.slice(1) || "quick_app",
+    waitForConnections: true,
+    connectionLimit: 5,
+    queueLimit: 0,
   });
+
+  const sessionStore = new MySQLStore(
+    {
+      expiration: sessionTtl,
+      createDatabaseTable: true,
+      schema: {
+        tableName: "sessions",
+        columnNames: {
+          session_id: "session_id",
+          expires: "expires",
+          data: "data",
+        },
+      },
+    },
+    sessionPool
+  );
+
   return session({
     secret: process.env.SESSION_SECRET!,
     store: sessionStore,
