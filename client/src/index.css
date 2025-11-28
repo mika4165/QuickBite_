@@ -1,6 +1,130 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Root color variables - Light mode */
+:root {
+  /* Primary: Warm orange-red for food/action (appetizing) */
+  --primary: 25 95% 53%;
+  --primary-foreground: 0 0% 100%;
+  --primary-border: hsl(25, 95%, 53%);
+  
+  /* Secondary: Soft green for healthy/fresh options */
+  --secondary: 142 71% 45%;
+  --secondary-foreground: 0 0% 100%;
+  --secondary-border: hsl(142, 71%, 45%);
+  
+  /* Accent: Warm amber for highlights/badges */
+  --accent: 38 92% 50%;
+  --accent-foreground: 0 0% 100%;
+  --accent-border: hsl(38, 92%, 50%);
+  
+  /* Neutral backgrounds and text */
+  --background: 0 0% 100%;
+  --foreground: 0 0% 8%;
+  --muted: 0 0% 92%;
+  --muted-foreground: 0 0% 40%;
+  
+  /* Cards and containers */
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 8%;
+  --card-border: 0 0% 88%;
+  
+  /* Destructive for warnings/errors */
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --destructive-border: hsl(0, 84%, 60%);
+  
+  /* Inputs and form elements */
+  --input: 0 0% 96%;
+  --input-foreground: 0 0% 8%;
+  
+  /* Popover overlays */
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 8%;
+  --popover-border: 0 0% 88%;
+  
+  /* Ring/focus states */
+  --ring: 25 95% 53%;
+  
+  /* Sidebar navigation */
+  --sidebar: 0 0% 96%;
+  --sidebar-foreground: 0 0% 8%;
+  --sidebar-border: 0 0% 88%;
+  --sidebar-primary: 25 95% 53%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 38 92% 50%;
+  --sidebar-accent-foreground: 0 0% 8%;
+  --sidebar-ring: 25 95% 53%;
+  
+  /* Chart colors */
+  --chart-1: 25 95% 53%;
+  --chart-2: 142 71% 45%;
+  --chart-3: 38 92% 50%;
+  --chart-4: 0 84% 60%;
+  --chart-5: 220 90% 56%;
+  
+  /* Typography */
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-serif: "Inter", system-ui, sans-serif;
+  --font-mono: "Menlo", "Monaco", monospace;
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+}
+
+/* Dark mode color variables */
+.dark {
+  --primary: 25 95% 63%;
+  --primary-foreground: 0 0% 8%;
+  --primary-border: hsl(25, 95%, 63%);
+  
+  --secondary: 142 71% 55%;
+  --secondary-foreground: 0 0% 8%;
+  --secondary-border: hsl(142, 71%, 55%);
+  
+  --accent: 38 92% 60%;
+  --accent-foreground: 0 0% 8%;
+  --accent-border: hsl(38, 92%, 60%);
+  
+  --background: 0 0% 8%;
+  --foreground: 0 0% 98%;
+  --muted: 0 0% 20%;
+  --muted-foreground: 0 0% 60%;
+  
+  --card: 0 0% 12%;
+  --card-foreground: 0 0% 98%;
+  --card-border: 0 0% 24%;
+  
+  --destructive: 0 84% 70%;
+  --destructive-foreground: 0 0% 8%;
+  --destructive-border: hsl(0, 84%, 70%);
+  
+  --input: 0 0% 18%;
+  --input-foreground: 0 0% 98%;
+  
+  --popover: 0 0% 12%;
+  --popover-foreground: 0 0% 98%;
+  --popover-border: 0 0% 24%;
+  
+  --ring: 25 95% 63%;
+  
+  --sidebar: 0 0% 14%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-border: 0 0% 26%;
+  --sidebar-primary: 25 95% 63%;
+  --sidebar-primary-foreground: 0 0% 8%;
+  --sidebar-accent: 38 92% 60%;
+  --sidebar-accent-foreground: 0 0% 8%;
+  --sidebar-ring: 25 95% 63%;
+}
 
 * {
   margin: 0;
@@ -14,23 +138,199 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  font-family: var(--font-sans);
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
+  transition: background-color 200ms ease-out, color 200ms ease-out;
 }
 
+/* Typography improvements */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+}
+
+h1 {
+  font-size: 2.25rem;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: 1.875rem;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-size: 1.5rem;
+}
+
+h4 {
+  font-size: 1.25rem;
+}
+
+h5 {
+  font-size: 1.125rem;
+}
+
+h6 {
+  font-size: 1rem;
+}
+
+p {
+  line-height: 1.6;
+  color: hsl(var(--foreground) / 0.9);
+}
+
+small {
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Hover and interaction utilities */
 @layer utilities {
   .hover-elevate {
-    transition: background-color 150ms ease-out;
+    transition: background-color 150ms ease-out, box-shadow 150ms ease-out, transform 150ms ease-out;
   }
 
   .hover-elevate:hover {
-    background-color: hsl(var(--muted) / 0.5);
+    background-color: hsl(var(--primary) / 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
   }
 
   .active-elevate-2 {
-    transition: background-color 100ms ease-out;
+    transition: background-color 100ms ease-out, box-shadow 100ms ease-out;
   }
 
   .active-elevate-2:active {
-    background-color: hsl(var(--muted) / 0.8);
+    background-color: hsl(var(--primary) / 0.15);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .toggle-elevate {
+    transition: background-color 150ms ease-out, box-shadow 150ms ease-out;
+  }
+
+  .toggle-elevate:hover {
+    background-color: hsl(var(--primary) / 0.08);
+  }
+
+  .toggle-elevate.toggle-elevated {
+    background-color: hsl(var(--primary) / 0.2);
+    box-shadow: 0 2px 8px hsl(var(--primary) / 0.2);
+  }
+
+  /* Focus visible for accessibility */
+  .focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  /* Smooth color transitions for dark mode */
+  .transition-colors {
+    transition: background-color 200ms ease-out, border-color 200ms ease-out, color 200ms ease-out;
+  }
+
+  /* Food-first card styling */
+  .card-food {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--card-border));
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 200ms ease-out, transform 150ms ease-out;
+  }
+
+  .card-food:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+  }
+
+  /* Badge styling for food categories */
+  .badge-food {
+    display: inline-block;
+    padding: 0.375rem 0.75rem;
+    background-color: hsl(var(--accent) / 0.15);
+    color: hsl(var(--accent));
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid hsl(var(--accent) / 0.3);
+  }
+
+  /* Rating display */
+  .rating-display {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: hsl(var(--foreground));
+  }
+
+  .rating-star {
+    color: hsl(38 92% 50%);
+    font-size: 1.125rem;
+  }
+
+  /* Image container with aspect ratio */
+  .image-container {
+    width: 100%;
+    object-fit: cover;
+    background: hsl(var(--muted));
+    display: block;
+  }
+
+  /* Button sizing consistency */
+  .btn-height-sync {
+    min-height: 2.5rem;
+  }
+
+  /* Smooth scroll behavior */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Text truncation utilities */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Visibility toggle without layout shift */
+  .visibility-hidden {
+    visibility: hidden;
+  }
+
+  .visibility-visible {
+    visibility: visible;
+  }
+}
+
+/* Responsive typography adjustments */
+@media (max-width: 640px) {
+  h1 {
+    font-size: 1.875rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+
+  a {
+    text-decoration: underline;
   }
 }
