@@ -69,9 +69,8 @@ export default function Login() {
       });
 
       if (response.ok) {
-        toast({ title: "Account created! Please log in." });
-        setEmail("");
-        setPassword("");
+        toast({ title: "Account created successfully!" });
+        setLocation("/");
       } else {
         const data = await response.json();
         toast({
@@ -158,6 +157,9 @@ export default function Login() {
             >
               {isLoading ? "Creating account..." : "Create Account"}
             </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              You'll be logged in as a customer automatically
+            </p>
           </form>
 
           <div className="mt-4 pt-4 border-t border-border">
