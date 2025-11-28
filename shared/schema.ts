@@ -70,6 +70,7 @@ export const orders = pgTable("orders", {
   status: varchar("status").default("pending_payment"), // pending_payment, payment_submitted, confirmed, ready, claimed, cancelled
   totalAmount: numeric("total_amount", { precision: 10, scale: 2 }).notNull(),
   pickupTime: varchar("pickup_time").notNull(),
+  notes: text("notes"),
   paymentProofUrl: varchar("payment_proof_url"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),

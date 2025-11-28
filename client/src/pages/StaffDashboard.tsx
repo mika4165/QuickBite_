@@ -442,6 +442,14 @@ function StaffOrderCard({
             )}
           </div>
 
+          {order.notes && (
+            <div className="mb-2 p-2 bg-muted rounded text-sm">
+              <p className="text-muted-foreground">
+                <span className="font-medium">Special Request:</span> {order.notes}
+              </p>
+            </div>
+          )}
+
           <div className="flex items-center gap-2 flex-wrap">
             <Button
               size="sm"
