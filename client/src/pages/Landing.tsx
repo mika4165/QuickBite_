@@ -75,9 +75,9 @@ export default function Landing() {
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </a>
-                <a href="/staff-signup">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto" data-testid="button-join-staff">
-                    Join as Staff
+                <a href="https://forms.google.com/your-merchant-form-url" target="_blank" rel="noopener noreferrer">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto" data-testid="button-be-merchant">
+                    Be a Merchant
                   </Button>
                 </a>
               </div>
