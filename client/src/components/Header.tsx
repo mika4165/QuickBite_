@@ -121,9 +121,14 @@ export function Header() {
               </DropdownMenu>
             </>
           ) : (
-            <a href="/api/login">
-              <Button data-testid="button-login">Log In</Button>
-            </a>
+            <div className="flex gap-2">
+              <a href="https://forms.gle/QotJYMzE85Lqe1Xj6" target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" data-testid="button-be-merchant">Be a Merchant</Button>
+              </a>
+              <a href="/api/login">
+                <Button data-testid="button-login">Log In</Button>
+              </a>
+            </div>
           )}
         </div>
       </div>
