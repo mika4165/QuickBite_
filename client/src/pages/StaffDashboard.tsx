@@ -405,8 +405,8 @@ function StaffOrderCard({
       <div className="flex items-start gap-3">
         <Avatar className="h-10 w-10">
           <AvatarImage
-            src={order.student?.profileImageUrl || undefined}
-            alt={order.student?.firstName}
+            src={order.student?.profileImageUrl ?? undefined}
+            alt={order.student?.firstName ?? ""}
             className="object-cover"
           />
           <AvatarFallback>

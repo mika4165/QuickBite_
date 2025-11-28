@@ -1,5 +1,5 @@
 import passport from "passport";
-import LocalStrategy from "passport-local";
+import { Strategy as LocalStrategy } from "passport-local";
 import session from "express-session";
 import type { Express, RequestHandler } from "express";
 import connectPg from "connect-pg-simple";
@@ -49,7 +49,7 @@ export async function setupAuth(app: Express) {
         usernameField: "email",
         passwordField: "password",
       },
-      async (email: string, password: string, done) => {
+      async (email: string, password: string, done: (err: any, user?: any, info?: any) => void) => {
         try {
           const user = await storage.getUserByEmail(email);
           if (!user || !user.password) {
