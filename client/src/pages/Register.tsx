@@ -56,8 +56,8 @@ export default function Register() {
       });
 
       if (response.ok) {
-        toast({ title: "Account created successfully!" });
-        setLocation("/");
+        toast({ title: "Account created successfully! Please log in." });
+        setLocation("/login");
       } else {
         const data = await response.json();
         toast({

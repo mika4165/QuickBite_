@@ -27,7 +27,20 @@ export default function Login() {
 
       if (response.ok) {
         toast({ title: "Login successful!" });
-        setLocation("/");
+        // Redirect based on user role
+        const userResponse = await fetch("/api/auth/user", {
+          credentials: "include",
+        });
+        if (userResponse.ok) {
+          const user = await userResponse.json();
+          if (user.role === "staff") {
+            setLocation("/staff");
+          } else {
+            setLocation("/");
+          }
+        } else {
+          setLocation("/");
+        }
       } else {
         const data = await response.json();
         toast({
