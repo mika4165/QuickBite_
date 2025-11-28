@@ -2,6 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Dark theme by default with orange accents */
+:root {
+  --primary: 25 95% 53%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 25 95% 53%;
+  --secondary-foreground: 0 0% 100%;
+  --accent: 25 95% 53%;
+  --accent-foreground: 0 0% 100%;
+  --background: 20 14% 10%;
+  --foreground: 0 0% 98%;
+  --card: 20 14% 15%;
+  --card-foreground: 0 0% 98%;
+  --muted: 20 14% 25%;
+  --muted-foreground: 0 0% 70%;
+  --border: 20 14% 20%;
+  --input: 20 14% 20%;
+  --ring: 25 95% 53%;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -11,19 +30,23 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color-scheme: dark;
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
 @layer utilities {
   .hover-elevate {
-    transition: background-color 150ms ease-out;
+    transition: background-color 150ms ease-out, box-shadow 150ms ease-out;
   }
 
   .hover-elevate:hover {
-    background-color: hsl(var(--muted) / 0.5);
+    background-color: hsl(var(--primary) / 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
   .active-elevate-2 {
@@ -31,6 +54,6 @@ body {
   }
 
   .active-elevate-2:active {
-    background-color: hsl(var(--muted) / 0.8);
+    background-color: hsl(var(--primary) / 0.3);
   }
 }

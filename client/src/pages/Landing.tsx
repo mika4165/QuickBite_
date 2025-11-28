@@ -1,61 +1,55 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { UtensilsCrossed, TrendingUp, Clock, MessageCircle } from "lucide-react";
+import { UtensilsCrossed } from "lucide-react";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted">
+    <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-background border-b border-border">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
               <UtensilsCrossed className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-xl">QuickBite</span>
+            <span className="font-semibold text-xl text-foreground">QuickBite</span>
           </div>
           <div className="flex gap-2">
             <a href="https://forms.gle/QotJYMzE85Lqe1Xj6" target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" data-testid="button-be-merchant">Be a Merchant</Button>
+              <Button variant="ghost" className="text-foreground" data-testid="button-be-merchant">Be a Merchant</Button>
             </a>
             <Button onClick={() => setLocation("/login")} data-testid="button-login">Log In</Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-16">
-        <div className="max-w-3xl mx-auto text-center mb-16">
-          <h1 className="text-5xl font-bold mb-4">Smart Meal Pre-Order System</h1>
-          <p className="text-xl text-muted-foreground mb-8">
-            Skip the lines. Pre-order your meals from school canteens with our payment-first system
-          </p>
-          <Button size="lg" onClick={() => setLocation("/register")} data-testid="button-get-started">
-            Get Started
-          </Button>
-        </div>
+      <main className="container mx-auto px-4 py-32 flex flex-col items-center justify-center min-h-[calc(100vh-64px)]">
+        <div className="max-w-2xl mx-auto text-center space-y-8">
+          <div className="space-y-4">
+            <div className="flex items-center justify-center gap-2 text-primary">
+              <UtensilsCrossed className="h-5 w-5" />
+              <span className="text-sm font-semibold">Smart Meal Pre-Order System</span>
+            </div>
+            <h1 className="text-5xl md:text-6xl font-bold">
+              <span className="text-foreground">Skip the line,</span>
+              <br />
+              <span className="text-primary">grab your meal!</span>
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+              Pre-order your meals from the school canteen. Pay ahead, choose your pickup time, and enjoy fresh food without the wait.
+            </p>
+          </div>
 
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
-          <div className="bg-card rounded-lg p-6 border border-border">
-            <TrendingUp className="h-12 w-12 text-primary mb-4" />
-            <h3 className="font-semibold text-lg mb-2">Browse & Order</h3>
-            <p className="text-muted-foreground">
-              Explore stores, browse meals, and add items to your cart
-            </p>
-          </div>
-          <div className="bg-card rounded-lg p-6 border border-border">
-            <Clock className="h-12 w-12 text-primary mb-4" />
-            <h3 className="font-semibold text-lg mb-2">Pay & Verify</h3>
-            <p className="text-muted-foreground">
-              Upload GCash payment proof and wait for merchant confirmation
-            </p>
-          </div>
-          <div className="bg-card rounded-lg p-6 border border-border">
-            <MessageCircle className="h-12 w-12 text-primary mb-4" />
-            <h3 className="font-semibold text-lg mb-2">Real-Time Chat</h3>
-            <p className="text-muted-foreground">
-              Communicate directly with merchants about your orders
-            </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+            <Button size="lg" onClick={() => setLocation("/register")} className="bg-primary text-primary-foreground hover:bg-primary/90" data-testid="button-get-started">
+              Get Started
+            </Button>
+            <a href="https://forms.gle/QotJYMzE85Lqe1Xj6" target="_blank" rel="noopener noreferrer">
+              <Button size="lg" variant="outline" className="border-foreground text-foreground hover:bg-foreground/10" data-testid="button-merchant-apply">
+                Be a Merchant
+              </Button>
+            </a>
           </div>
         </div>
       </main>
