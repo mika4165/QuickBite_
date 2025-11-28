@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 import { UtensilsCrossed } from "lucide-react";
 
 export default function Login() {
@@ -27,20 +28,10 @@ export default function Login() {
 
       if (response.ok) {
         toast({ title: "Login successful!" });
-        // Redirect based on user role
-        const userResponse = await fetch("/api/auth/user", {
-          credentials: "include",
-        });
-        if (userResponse.ok) {
-          const user = await userResponse.json();
-          if (user.role === "staff") {
-            setLocation("/staff");
-          } else {
-            setLocation("/");
-          }
-        } else {
-          setLocation("/");
-        }
+        // Invalidate auth cache to refresh user data
+        await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+        // Redirect - the Router will handle role-based routing
+        setLocation("/");
       } else {
         const data = await response.json();
         toast({
