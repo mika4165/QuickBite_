@@ -3,8 +3,9 @@ import { createServer, type Server } from "http";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import passport from "passport";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated, hashPassword } from "./replitAuth";
 import { insertOrderSchema, insertRatingSchema, insertMessageSchema, insertMealSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -54,15 +55,46 @@ export async function registerRoutes(
   });
 
   // Auth routes
+  app.post("/api/login", passport.authenticate("local"), (req: any, res) => {
+    res.json({ message: "Login successful" });
+  });
+
+  app.post("/api/register", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password required" });
+      }
+      const existing = await storage.getUserByEmail(email);
+      if (existing) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
+      const hashedPassword = hashPassword(password);
+      const user = await storage.createUser(email, hashedPassword, "student");
+      req.login(user, (err) => {
+        if (err) return res.status(500).json({ message: "Login failed" });
+        res.json({ message: "Account created successfully" });
+      });
+    } catch (error) {
+      console.error("Error registering:", error);
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+
   app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const user = await storage.getUser(req.user.id);
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
     }
+  });
+
+  app.get("/api/logout", (req, res) => {
+    req.logout(() => {
+      res.redirect("/");
+    });
   });
 
   // File upload endpoint

@@ -69,7 +69,7 @@ export default function Landing() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="/api/login">
+                <a href="/login">
                   <Button size="lg" className="w-full sm:w-auto" data-testid="button-get-started">
                     Get Started
                     <ArrowRight className="h-4 w-4 ml-2" />
@@ -144,7 +144,7 @@ export default function Landing() {
             <p className="text-primary-foreground/80 mb-8 max-w-xl mx-auto">
               Join your classmates and start pre-ordering your meals today!
             </p>
-            <a href="/api/login">
+            <a href="/login">
               <Button 
                 size="lg" 
                 variant="secondary" 
