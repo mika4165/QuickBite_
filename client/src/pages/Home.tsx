@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { Search, Filter } from "lucide-react";
+import { Search } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Header } from "@/components/Header";
 import { StoreCard } from "@/components/StoreCard";
@@ -10,22 +9,16 @@ import type { StoreWithRating } from "@shared/schema";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const { data: stores, isLoading } = useQuery<StoreWithRating[]>({
     queryKey: ["/api/stores"],
   });
 
-  const categories = stores
-    ? [...new Set(stores.map((s) => s.category).filter(Boolean))]
-    : [];
-
   const filteredStores = stores?.filter((store) => {
-    const matchesSearch =
+    return (
       store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      store.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = !selectedCategory || store.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+      store.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
   });
 
   return (
@@ -52,30 +45,6 @@ export default function Home() {
             />
           </div>
         </div>
-
-        {categories.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-8">
-            <Button
-              variant={selectedCategory === null ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedCategory(null)}
-              data-testid="filter-all"
-            >
-              All
-            </Button>
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedCategory(category as string)}
-                data-testid={`filter-${category}`}
-              >
-                {category}
-              </Button>
-            ))}
-          </div>
-        )}
 
         {isLoading ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
