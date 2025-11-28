@@ -240,16 +240,31 @@ export class MemoryStorage implements IStorage {
 
   async getStores(): Promise<StoreWithRating[]> {
     const stores = Array.from(this.storesData.values());
-    return stores.map(store => ({
-      ...store,
-      averageRating: 4,
-      ratingCount: 0,
-    }));
+    return stores.map(store => {
+      const ratings = Array.from(this.ratingsData.values()).filter(r => r.storeId === store.id);
+      const averageRating = ratings.length > 0 
+        ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length 
+        : 0;
+      return {
+        ...store,
+        averageRating,
+        ratingCount: ratings.length,
+      };
+    });
   }
 
   async getStore(id: number): Promise<StoreWithRating | undefined> {
     const store = this.storesData.get(id);
-    return store ? { ...store, averageRating: 4, ratingCount: 0 } : undefined;
+    if (!store) return undefined;
+    const ratings = Array.from(this.ratingsData.values()).filter(r => r.storeId === store.id);
+    const averageRating = ratings.length > 0 
+      ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length 
+      : 0;
+    return { 
+      ...store, 
+      averageRating,
+      ratingCount: ratings.length,
+    };
   }
 
   async getStoreByOwner(ownerId: string): Promise<Store | undefined> {
