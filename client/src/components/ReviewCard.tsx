@@ -35,7 +35,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
             </span>
           </div>
           
-          <StarRating rating={review.rating} size="sm" className="mt-1" />
+          <StarRating rating={typeof review.rating === 'string' ? parseInt(review.rating) : review.rating} size="sm" className="mt-1" />
           
           {review.comment && (
             <p className="text-sm text-muted-foreground mt-2">

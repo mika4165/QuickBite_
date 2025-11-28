@@ -90,7 +90,7 @@ export const ratings = pgTable("ratings", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   storeId: integer("store_id").references(() => stores.id).notNull(),
   userId: varchar("user_id").references(() => users.id).notNull(),
-  rating: varchar("rating").notNull(), // 1-5
+  rating: integer("rating").notNull(), // 1-5
   comment: text("comment"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
@@ -119,7 +119,9 @@ export const insertStoreSchema = createInsertSchema(stores).omit({ id: true, cre
 export const insertMealSchema = createInsertSchema(meals).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertOrderItemSchema = createInsertSchema(orderItems).omit({ id: true });
-export const insertRatingSchema = createInsertSchema(ratings).omit({ id: true, createdAt: true });
+export const insertRatingSchema = createInsertSchema(ratings).omit({ id: true, createdAt: true }).extend({
+  rating: z.number().int().min(1).max(5),
+});
 export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true });
 
 // Inferred types from insert schemas
