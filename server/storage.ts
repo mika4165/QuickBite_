@@ -6,6 +6,7 @@ import {
   orderItems,
   ratings,
   messages,
+  mealRatings,
   type User,
   type UpsertUser,
   type Store,
@@ -20,7 +21,10 @@ import {
   type InsertRating,
   type Message,
   type InsertMessage,
+  type MealRating,
+  type InsertMealRating,
   type StoreWithRating,
+  type MealWithRating,
   type OrderWithDetails,
   type MessageWithSender,
 } from "@shared/schema";
@@ -40,10 +44,17 @@ export interface IStorage {
   updateStore(id: number, store: Partial<InsertStore>): Promise<Store | undefined>;
   
   // Meal operations
-  getMealsByStore(storeId: number): Promise<Meal[]>;
-  getMeal(id: number): Promise<Meal | undefined>;
+  getMealsByStore(storeId: number): Promise<MealWithRating[]>;
+  getMeal(id: number): Promise<MealWithRating | undefined>;
   createMeal(meal: InsertMeal): Promise<Meal>;
   updateMeal(id: number, meal: Partial<InsertMeal>): Promise<Meal | undefined>;
+  
+  // Meal rating operations
+  getMealRatingsByMeal(mealId: number): Promise<(MealRating & { user?: User })[]>;
+  createMealRating(rating: InsertMealRating): Promise<MealRating>;
+  
+  // Staff operations
+  applyAsStaff(userId: string, storeId: number): Promise<User>;
   
   // Order operations
   getOrdersByStudent(studentId: string): Promise<OrderWithDetails[]>;
@@ -151,13 +162,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Meal operations
-  async getMealsByStore(storeId: number): Promise<Meal[]> {
-    return db.select().from(meals).where(eq(meals.storeId, storeId));
+  async getMealsByStore(storeId: number): Promise<MealWithRating[]> {
+    const mealList = await db.select().from(meals).where(eq(meals.storeId, storeId));
+    return Promise.all(mealList.map((meal) => this.enrichMealRatings(meal)));
   }
 
-  async getMeal(id: number): Promise<Meal | undefined> {
+  async getMeal(id: number): Promise<MealWithRating | undefined> {
     const [meal] = await db.select().from(meals).where(eq(meals.id, id));
-    return meal;
+    if (!meal) return undefined;
+    return this.enrichMealRatings(meal);
+  }
+
+  private async enrichMealRatings(meal: Meal): Promise<MealWithRating> {
+    const ratingStats = await db
+      .select({
+        avgRating: sql<number>`COALESCE(AVG(${mealRatings.rating}), 0)`,
+        count: sql<number>`COUNT(${mealRatings.id})`,
+      })
+      .from(mealRatings)
+      .where(eq(mealRatings.mealId, meal.id));
+    
+    return {
+      ...meal,
+      averageRating: Number(ratingStats[0]?.avgRating || 0),
+      ratingCount: Number(ratingStats[0]?.count || 0),
+    };
   }
 
   async createMeal(meal: InsertMeal): Promise<Meal> {
@@ -295,6 +324,37 @@ export class DatabaseStorage implements IStorage {
   async createMessage(message: InsertMessage): Promise<Message> {
     const [newMessage] = await db.insert(messages).values(message).returning();
     return newMessage;
+  }
+
+  // Meal rating operations
+  async getMealRatingsByMeal(mealId: number): Promise<(MealRating & { user?: User })[]> {
+    const ratingList = await db
+      .select()
+      .from(mealRatings)
+      .where(eq(mealRatings.mealId, mealId))
+      .orderBy(desc(mealRatings.createdAt));
+    
+    return Promise.all(
+      ratingList.map(async (rating) => {
+        const [user] = await db.select().from(users).where(eq(users.id, rating.userId));
+        return { ...rating, user };
+      })
+    );
+  }
+
+  async createMealRating(rating: InsertMealRating): Promise<MealRating> {
+    const [newRating] = await db.insert(mealRatings).values(rating).returning();
+    return newRating;
+  }
+
+  // Staff operations
+  async applyAsStaff(userId: string, storeId: number): Promise<User> {
+    const [updated] = await db
+      .update(users)
+      .set({ role: "staff", storeId: storeId })
+      .where(eq(users.id, userId))
+      .returning();
+    return updated;
   }
 }
 

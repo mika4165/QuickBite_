@@ -5,7 +5,7 @@ import path from "path";
 import fs from "fs";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertOrderSchema, insertRatingSchema, insertMessageSchema, insertMealSchema } from "@shared/schema";
+import { insertOrderSchema, insertRatingSchema, insertMessageSchema, insertMealSchema, insertMealRatingSchema } from "@shared/schema";
 import { z } from "zod";
 
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -383,6 +383,60 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating meal:", error);
       res.status(500).json({ message: "Failed to update meal" });
+    }
+  });
+
+  // Meal ratings
+  app.get("/api/meals/:id/ratings", async (req, res) => {
+    try {
+      const mealId = parseInt(req.params.id);
+      const ratings = await storage.getMealRatingsByMeal(mealId);
+      res.json(ratings);
+    } catch (error) {
+      console.error("Error fetching meal ratings:", error);
+      res.status(500).json({ message: "Failed to fetch meal ratings" });
+    }
+  });
+
+  app.post("/api/meals/:id/ratings", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const mealId = parseInt(req.params.id);
+      
+      const validatedData = insertMealRatingSchema.parse({
+        mealId,
+        userId,
+        rating: req.body.rating,
+        comment: req.body.comment,
+        photoUrl: req.body.photoUrl,
+      });
+
+      const rating = await storage.createMealRating(validatedData);
+      res.json(rating);
+    } catch (error) {
+      console.error("Error creating meal rating:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid rating data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create meal rating" });
+    }
+  });
+
+  // Staff application
+  app.post("/api/staff/apply", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const storeId = parseInt(req.body.storeId);
+
+      if (!storeId) {
+        return res.status(400).json({ message: "Store ID required" });
+      }
+
+      const user = await storage.applyAsStaff(userId, storeId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error applying as staff:", error);
+      res.status(500).json({ message: "Failed to apply as staff" });
     }
   });
 

@@ -15,6 +15,7 @@ import Orders from "@/pages/Orders";
 import OrderDetail from "@/pages/OrderDetail";
 import Messages from "@/pages/Messages";
 import StaffDashboard from "@/pages/StaffDashboard";
+import StaffSignup from "@/pages/StaffSignup";
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -34,6 +35,7 @@ function Router() {
     return (
       <Switch>
         <Route path="/" component={Landing} />
+        <Route path="/staff-signup" component={StaffSignup} />
         <Route component={Landing} />
       </Switch>
     );
@@ -51,6 +53,7 @@ function Router() {
       <Route path="/orders/:id" component={OrderDetail} />
       <Route path="/messages" component={Messages} />
       <Route path="/staff" component={StaffDashboard} />
+      <Route path="/staff-signup" component={StaffSignup} />
       <Route component={NotFound} />
     </Switch>
   );
