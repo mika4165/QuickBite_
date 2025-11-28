@@ -19,22 +19,6 @@ const sampleStores = [
     logoUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=100&h=100&fit=crop",
     isActive: true,
   },
-  {
-    name: "Burger Station",
-    description: "Juicy burgers, crispy fries, and ice-cold drinks. The ultimate comfort food spot!",
-    category: "Fast Food",
-    bannerImageUrl: "https://images.unsplash.com/photo-1550547660-d9450f859349?w=800&h=400&fit=crop",
-    logoUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=100&h=100&fit=crop",
-    isActive: true,
-  },
-  {
-    name: "Noodle House",
-    description: "Authentic Asian noodles from ramen to pad thai. Hot, slurpy, and satisfying!",
-    category: "Asian",
-    bannerImageUrl: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800&h=400&fit=crop",
-    logoUrl: "https://images.unsplash.com/photo-1552611052-33e04de081de?w=100&h=100&fit=crop",
-    isActive: true,
-  },
 ];
 
 const sampleMeals: Record<string, { name: string; description: string; price: string; category: string; imageUrl: string }[]> = {
@@ -52,22 +36,6 @@ const sampleMeals: Record<string, { name: string; description: string; price: st
     { name: "Smoothie Bowl", description: "Acai berry bowl with fresh fruits", price: "110.00", category: "Bowls", imageUrl: "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=400&h=400&fit=crop" },
     { name: "Avocado Toast", description: "Toasted sourdough with fresh avocado", price: "80.00", category: "Toast", imageUrl: "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=400&h=400&fit=crop" },
     { name: "Green Smoothie", description: "Spinach, banana, and apple blend", price: "75.00", category: "Drinks", imageUrl: "https://images.unsplash.com/photo-1622597467836-f3285f2131b8?w=400&h=400&fit=crop" },
-  ],
-  "Burger Station": [
-    { name: "Classic Cheeseburger", description: "Beef patty with cheddar cheese", price: "95.00", category: "Burgers", imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=400&fit=crop" },
-    { name: "Bacon Double", description: "Double patty with crispy bacon", price: "135.00", category: "Burgers", imageUrl: "https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=400&h=400&fit=crop" },
-    { name: "Chicken Burger", description: "Crispy fried chicken breast", price: "90.00", category: "Burgers", imageUrl: "https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=400&h=400&fit=crop" },
-    { name: "Crispy Fries", description: "Golden crispy potato fries", price: "45.00", category: "Sides", imageUrl: "https://images.unsplash.com/photo-1576107232684-1279f390859f?w=400&h=400&fit=crop" },
-    { name: "Onion Rings", description: "Crispy battered onion rings", price: "55.00", category: "Sides", imageUrl: "https://images.unsplash.com/photo-1639024471283-03518883512d?w=400&h=400&fit=crop" },
-    { name: "Vanilla Milkshake", description: "Creamy vanilla shake", price: "65.00", category: "Drinks", imageUrl: "https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=400&h=400&fit=crop" },
-  ],
-  "Noodle House": [
-    { name: "Tonkotsu Ramen", description: "Rich pork bone broth with chashu", price: "145.00", category: "Ramen", imageUrl: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&h=400&fit=crop" },
-    { name: "Miso Ramen", description: "Miso-based broth with egg", price: "130.00", category: "Ramen", imageUrl: "https://images.unsplash.com/photo-1557872943-16a5ac26437e?w=400&h=400&fit=crop" },
-    { name: "Pad Thai", description: "Stir-fried rice noodles Thai style", price: "110.00", category: "Thai", imageUrl: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=400&h=400&fit=crop" },
-    { name: "Beef Pho", description: "Vietnamese rice noodle soup", price: "120.00", category: "Vietnamese", imageUrl: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=400&h=400&fit=crop" },
-    { name: "Gyoza", description: "Japanese dumplings (6 pcs)", price: "65.00", category: "Sides", imageUrl: "https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=400&h=400&fit=crop" },
-    { name: "Green Tea", description: "Hot Japanese green tea", price: "35.00", category: "Drinks", imageUrl: "https://images.unsplash.com/photo-1627435601361-ec25f5b1d0e5?w=400&h=400&fit=crop" },
   ],
 };
 
