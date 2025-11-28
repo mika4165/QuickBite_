@@ -110,7 +110,7 @@ export async function registerRoutes(
 
       // If updating store's GCash QR code
       if (type === "gcash_qr" && storeId) {
-        const userId = req.user.claims.sub;
+        const userId = req.user.id;
         const store = await storage.getStoreByOwner(userId);
         if (store && store.id === parseInt(storeId)) {
           await storage.updateStore(store.id, { gcashQrUrl: fileUrl });
@@ -170,7 +170,7 @@ export async function registerRoutes(
 
   app.post("/api/stores/:id/reviews", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const storeId = parseInt(req.params.id);
       
       const validatedData = insertRatingSchema.parse({
@@ -194,7 +194,7 @@ export async function registerRoutes(
   // Order routes
   app.get("/api/orders", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const orders = await storage.getOrdersByStudent(userId);
       res.json(orders);
     } catch (error) {
@@ -211,7 +211,7 @@ export async function registerRoutes(
       }
       
       // Check if user is authorized to view this order
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       const isStudent = order.studentId === userId;
       const isStaff = user?.role === "staff" && user?.storeId === order.storeId;
@@ -229,7 +229,7 @@ export async function registerRoutes(
 
   app.post("/api/orders", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       const orderData = {
         studentId: userId,
@@ -269,7 +269,7 @@ export async function registerRoutes(
 
   app.post("/api/orders/:id/messages", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const orderId = parseInt(req.params.id);
       
       const validatedData = insertMessageSchema.parse({
@@ -292,7 +292,7 @@ export async function registerRoutes(
   // Staff routes
   app.get("/api/staff/store", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (!user || user.role !== "staff") {
@@ -313,7 +313,7 @@ export async function registerRoutes(
 
   app.get("/api/staff/orders", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (!user || user.role !== "staff" || !user.storeId) {
@@ -330,7 +330,7 @@ export async function registerRoutes(
 
   app.get("/api/staff/meals", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (!user || user.role !== "staff" || !user.storeId) {
@@ -347,7 +347,7 @@ export async function registerRoutes(
 
   app.patch("/api/staff/orders/:id/status", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (!user || user.role !== "staff" || !user.storeId) {
@@ -371,7 +371,7 @@ export async function registerRoutes(
 
   app.post("/api/staff/meals", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (!user || user.role !== "staff" || !user.storeId) {
@@ -396,7 +396,7 @@ export async function registerRoutes(
 
   app.patch("/api/staff/meals/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (!user || user.role !== "staff" || !user.storeId) {
@@ -421,7 +421,7 @@ export async function registerRoutes(
   // Staff application
   app.post("/api/staff/apply", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const storeId = parseInt(req.body.storeId);
 
       if (!storeId) {
