@@ -102,6 +102,11 @@ export default function Login() {
         </div>
 
         <Card className="p-6">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold mb-2">Customer Login</h2>
+            <p className="text-sm text-muted-foreground">Sign in with your email and password</p>
+          </div>
+
           <form onSubmit={handleLogin} className="space-y-4 mb-6">
             <div>
               <label className="text-sm font-medium mb-2 block">Email</label>
@@ -144,10 +149,11 @@ export default function Login() {
             </div>
           </div>
 
-          <form onSubmit={handleRegister} className="space-y-4">
-            <p className="text-sm text-muted-foreground text-center mb-4">
-              Don't have an account? Create one below
-            </p>
+          <form onSubmit={handleRegister} className="space-y-4 mb-6">
+            <div>
+              <h3 className="text-sm font-semibold mb-2">New Customer?</h3>
+              <p className="text-xs text-muted-foreground mb-4">Create your account to start ordering meals</p>
+            </div>
             <Button
               type="submit"
               variant="outline"
@@ -157,15 +163,17 @@ export default function Login() {
             >
               {isLoading ? "Creating account..." : "Create Account"}
             </Button>
-            <p className="text-xs text-muted-foreground text-center">
-              You'll be logged in as a customer automatically
-            </p>
           </form>
 
-          <div className="mt-4 pt-4 border-t border-border">
-            <p className="text-xs text-muted-foreground text-center">
-              💡 Tip: Use the same email/password to log in as a customer or merchant based on your account type
+          <div className="pt-4 border-t border-border">
+            <p className="text-xs text-muted-foreground text-center mb-3">
+              Are you a merchant? Contact the admin to apply via the form
             </p>
+            <a href="https://forms.google.com/your-merchant-form-url" target="_blank" rel="noopener noreferrer">
+              <Button variant="ghost" size="sm" className="w-full text-xs" data-testid="button-merchant-form">
+                Merchant Application Form
+              </Button>
+            </a>
           </div>
         </Card>
 
