@@ -1,113 +1,112 @@
 import { sql, relations } from "drizzle-orm";
 import {
   index,
-  jsonb,
-  pgTable,
+  json,
+  mysqlTable,
   timestamp,
   varchar,
   text,
-  integer,
+  int,
   boolean,
   decimal,
-  serial,
-} from "drizzle-orm/pg-core";
+} from "drizzle-orm/mysql-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Session storage table for Replit Auth
-export const sessions = pgTable(
+// Session storage table for express-mysql-session
+export const sessions = mysqlTable(
   "sessions",
   {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
+    session_id: varchar("session_id", { length: 128 }).primaryKey(),
+    expires: int("expires").notNull(),
+    data: text("data").notNull(),
   },
-  (table) => [index("IDX_session_expire").on(table.expire)],
+  (table) => [index("IDX_session_expire").on(table.expires)],
 );
 
 // Users table with role support (student/staff)
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique().notNull(),
-  password: varchar("password"),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
+export const users = mysqlTable("users", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  email: varchar("email", { length: 255 }).unique().notNull(),
+  password: varchar("password", { length: 255 }),
+  firstName: varchar("first_name", { length: 255 }),
+  lastName: varchar("last_name", { length: 255 }),
+  profileImageUrl: varchar("profile_image_url", { length: 512 }),
   role: varchar("role", { length: 20 }).default("student"), // 'student' or 'staff'
-  storeId: integer("store_id"), // For staff, links to their store
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  storeId: int("store_id"), // For staff, links to their store
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
 });
 
 // Stores table (canteen stores)
-export const stores = pgTable("stores", {
-  id: serial("id").primaryKey(),
+export const stores = mysqlTable("stores", {
+  id: int("id").primaryKey().autoincrement(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   category: varchar("category", { length: 100 }),
-  bannerImageUrl: varchar("banner_image_url"),
-  logoUrl: varchar("logo_url"),
-  gcashQrUrl: varchar("gcash_qr_url"),
+  bannerImageUrl: varchar("banner_image_url", { length: 512 }),
+  logoUrl: varchar("logo_url", { length: 512 }),
+  gcashQrUrl: varchar("gcash_qr_url", { length: 512 }),
   isActive: boolean("is_active").default(true),
-  ownerId: varchar("owner_id").references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  ownerId: varchar("owner_id", { length: 36 }).references(() => users.id),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
 });
 
 // Meals table
-export const meals = pgTable("meals", {
-  id: serial("id").primaryKey(),
-  storeId: integer("store_id").references(() => stores.id).notNull(),
+export const meals = mysqlTable("meals", {
+  id: int("id").primaryKey().autoincrement(),
+  storeId: int("store_id").references(() => stores.id).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  imageUrl: varchar("image_url"),
+  imageUrl: varchar("image_url", { length: 512 }),
   isAvailable: boolean("is_available").default(true),
   category: varchar("category", { length: 100 }),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
 });
 
 // Orders table
-export const orders = pgTable("orders", {
-  id: serial("id").primaryKey(),
-  studentId: varchar("student_id").references(() => users.id).notNull(),
-  storeId: integer("store_id").references(() => stores.id).notNull(),
+export const orders = mysqlTable("orders", {
+  id: int("id").primaryKey().autoincrement(),
+  studentId: varchar("student_id", { length: 36 }).references(() => users.id).notNull(),
+  storeId: int("store_id").references(() => stores.id).notNull(),
   status: varchar("status", { length: 50 }).default("pending_payment"), // pending_payment, payment_submitted, confirmed, ready, claimed, cancelled
   pickupTime: varchar("pickup_time", { length: 50 }).notNull(),
   totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
-  paymentProofUrl: varchar("payment_proof_url"),
+  paymentProofUrl: varchar("payment_proof_url", { length: 512 }),
   notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
 });
 
 // Order items table
-export const orderItems = pgTable("order_items", {
-  id: serial("id").primaryKey(),
-  orderId: integer("order_id").references(() => orders.id).notNull(),
-  mealId: integer("meal_id").references(() => meals.id).notNull(),
-  quantity: integer("quantity").notNull().default(1),
+export const orderItems = mysqlTable("order_items", {
+  id: int("id").primaryKey().autoincrement(),
+  orderId: int("order_id").references(() => orders.id).notNull(),
+  mealId: int("meal_id").references(() => meals.id).notNull(),
+  quantity: int("quantity").notNull().default(1),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
 });
 
 // Ratings table for store reviews
-export const ratings = pgTable("ratings", {
-  id: serial("id").primaryKey(),
-  storeId: integer("store_id").references(() => stores.id).notNull(),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  rating: integer("rating").notNull(), // 1-5
+export const ratings = mysqlTable("ratings", {
+  id: int("id").primaryKey().autoincrement(),
+  storeId: int("store_id").references(() => stores.id).notNull(),
+  userId: varchar("user_id", { length: 36 }).references(() => users.id).notNull(),
+  rating: int("rating").notNull(), // 1-5
   comment: text("comment"),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Messages table for store-customer communication
-export const messages = pgTable("messages", {
-  id: serial("id").primaryKey(),
-  orderId: integer("order_id").references(() => orders.id).notNull(),
-  senderId: varchar("sender_id").references(() => users.id).notNull(),
+export const messages = mysqlTable("messages", {
+  id: int("id").primaryKey().autoincrement(),
+  orderId: int("order_id").references(() => orders.id).notNull(),
+  senderId: varchar("sender_id", { length: 36 }).references(() => users.id).notNull(),
   content: text("content").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Relations
@@ -187,6 +186,7 @@ export const messagesRelations = relations(messages, ({ one }) => ({
 
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
   createdAt: true,
   updatedAt: true,
 });
@@ -224,33 +224,17 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
 });
 
 // Types
-export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
-export type InsertStore = z.infer<typeof insertStoreSchema>;
+export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Store = typeof stores.$inferSelect;
-export type InsertMeal = z.infer<typeof insertMealSchema>;
+export type InsertStore = z.infer<typeof insertStoreSchema>;
 export type Meal = typeof meals.$inferSelect;
-export type InsertOrder = z.infer<typeof insertOrderSchema>;
+export type InsertMeal = z.infer<typeof insertMealSchema>;
 export type Order = typeof orders.$inferSelect;
-export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
+export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type OrderItem = typeof orderItems.$inferSelect;
-export type InsertRating = z.infer<typeof insertRatingSchema>;
+export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 export type Rating = typeof ratings.$inferSelect;
-export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type InsertRating = z.infer<typeof insertRatingSchema>;
 export type Message = typeof messages.$inferSelect;
-
-// Extended types for frontend
-export type StoreWithRating = Store & {
-  averageRating: number;
-  ratingCount: number;
-};
-
-export type OrderWithDetails = Order & {
-  store: Store;
-  items: (OrderItem & { meal: Meal })[];
-  student: User;
-};
-
-export type MessageWithSender = Message & {
-  sender: User;
-};
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
