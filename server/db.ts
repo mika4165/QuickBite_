@@ -1,8 +1,7 @@
-// Using MemoryStorage for development
-// When PostgreSQL is properly configured, replace with:
-// import { drizzle } from "drizzle-orm/postgres-js";
-// import postgres from "postgres";
-// const client = postgres(process.env.DATABASE_URL!);
-// export const db = drizzle(client);
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 
-export const db = null;
+const DATABASE_URL = `postgresql://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT}/${process.env.PGDATABASE}?sslmode=require`;
+
+const client = postgres(DATABASE_URL);
+export const db = drizzle(client);
