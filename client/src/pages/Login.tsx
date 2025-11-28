@@ -129,7 +129,7 @@ export default function Login() {
             <p className="text-xs text-muted-foreground text-center mb-3">
               Are you a merchant? Contact the admin to apply via the form
             </p>
-            <a href="https://forms.google.com/your-merchant-form-url" target="_blank" rel="noopener noreferrer">
+            <a href="https://forms.gle/QotJYMzE85Lqe1Xj6" target="_blank" rel="noopener noreferrer">
               <Button variant="ghost" size="sm" className="w-full text-xs" data-testid="button-merchant-form">
                 Merchant Application Form
               </Button>
