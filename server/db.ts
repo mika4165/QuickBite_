@@ -9,7 +9,9 @@ if (!process.env.DATABASE_URL) {
 }
 
 // Parse DATABASE_URL for MySQL connection
-const url = new URL(process.env.DATABASE_URL || "mysql://root@localhost/quick_app");
+const url = new URL(
+  process.env.DATABASE_URL || "mysql://root@localhost/quick_app",
+);
 const pool = createPool({
   host: url.hostname || "localhost",
   user: url.username || "root",
