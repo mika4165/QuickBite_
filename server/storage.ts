@@ -66,328 +66,293 @@ export interface IStorage {
   createMessage(message: InsertMessage): Promise<Message>;
 }
 
-// In-memory storage for temporary use (while MySQL is being set up)
-export class MemoryStorage implements IStorage {
-  private usersData: Map<string, User> = new Map();
-  private storesData: Map<number, Store> = new Map();
-  private mealsData: Map<number, Meal> = new Map();
-  private ordersData: Map<number, Order> = new Map();
-  private orderItemsData: Map<number, OrderItem> = new Map();
-  private ratingsData: Map<number, Rating> = new Map();
-  private messagesData: Map<number, Message> = new Map();
-  private nextStoreId = 3;
-  private nextMealId = 7;
-  private nextOrderId = 1;
-  private nextOrderItemId = 1;
-  private nextRatingId = 4;
-  private nextMessageId = 1;
-
-  constructor() {
-    this.initializeDefaultData();
-  }
-
-  private initializeDefaultData() {
-    // Initialize stores
-    this.storesData.set(1, {
-      id: 1,
-      name: "Mang Juan's Kitchen",
-      description: "Home-cooked Filipino favorites prepared fresh daily. Known for our delicious adobo and sinigang!",
-      category: "Filipino",
-      bannerImageUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&h=400&fit=crop",
-      logoUrl: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=100&h=100&fit=crop",
-      gcashQrUrl: null,
-      isActive: true,
-      ownerId: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    this.storesData.set(2, {
-      id: 2,
-      name: "Fresh Bites Cafe",
-      description: "Healthy and tasty options for the health-conscious student. Salads, wraps, and smoothie bowls!",
-      category: "Healthy",
-      bannerImageUrl: "https://images.unsplash.com/photo-1543353071-873f17a7a088?w=800&h=400&fit=crop",
-      logoUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=100&h=100&fit=crop",
-      gcashQrUrl: null,
-      isActive: true,
-      ownerId: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    // Initialize meals for store 1
-    const mealsList: Meal[] = [
-      {
-        id: 1,
-        storeId: 1,
-        name: "Chicken Adobo",
-        description: "Classic Filipino chicken adobo with rice",
-        price: "85.00",
-        imageUrl: "https://images.unsplash.com/photo-1624726175512-19b9baf9fbd1?w=400&h=400&fit=crop",
-        isAvailable: true,
-        category: "Main Dish",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 2,
-        storeId: 1,
-        name: "Pork Sinigang",
-        description: "Sour tamarind soup with tender pork",
-        price: "95.00",
-        imageUrl: "https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=400&h=400&fit=crop",
-        isAvailable: true,
-        category: "Main Dish",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 3,
-        storeId: 1,
-        name: "Beef Kare-Kare",
-        description: "Oxtail stew in peanut sauce",
-        price: "120.00",
-        imageUrl: "https://images.unsplash.com/photo-1547928578-bca3e9c5a477?w=400&h=400&fit=crop",
-        isAvailable: true,
-        category: "Main Dish",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 4,
-        storeId: 1,
-        name: "Lumpiang Shanghai",
-        description: "Crispy spring rolls (8 pcs)",
-        price: "50.00",
-        imageUrl: "https://images.unsplash.com/photo-1607330289024-1535c6b4e1c1?w=400&h=400&fit=crop",
-        isAvailable: true,
-        category: "Sides",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 5,
-        storeId: 1,
-        name: "Halo-Halo",
-        description: "Classic Filipino shaved ice dessert",
-        price: "65.00",
-        imageUrl: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400&h=400&fit=crop",
-        isAvailable: true,
-        category: "Dessert",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 6,
-        storeId: 1,
-        name: "Iced Tea",
-        description: "Refreshing house-blend iced tea",
-        price: "25.00",
-        imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&h=400&fit=crop",
-        isAvailable: true,
-        category: "Drinks",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ];
-
-    mealsList.forEach(meal => this.mealsData.set(meal.id, meal));
-  }
-
+export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: string): Promise<User | undefined> {
-    return this.usersData.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.usersData.values()).find(u => u.email === email);
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
   }
 
   async createUser(email: string, password: string, role: string = "student"): Promise<User> {
-    const id = crypto.randomUUID();
-    const user: User = {
-      id,
-      email,
-      password,
-      firstName: null,
-      lastName: null,
-      profileImageUrl: null,
-      role,
-      storeId: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.usersData.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values({
+        email,
+        password,
+        role,
+      })
+      .returning();
     return user;
   }
 
   async upsertUser(user: User): Promise<User> {
-    this.usersData.set(user.id, user);
-    return user;
+    const [updated] = await db
+      .insert(users)
+      .values(user)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: user,
+      })
+      .returning();
+    return updated;
   }
 
   // Store operations
   async getStores(): Promise<StoreWithRating[]> {
-    const stores = Array.from(this.storesData.values());
-    return stores.map(store => ({
-      ...store,
-      averageRating: 4,
-      ratingCount: 0,
-    }));
+    const storeList = await db.select().from(stores);
+    
+    return Promise.all(
+      storeList.map(async (store) => {
+        const ratingList = await db
+          .select({ 
+            rating: ratings.rating 
+          })
+          .from(ratings)
+          .where(eq(ratings.storeId, store.id));
+        
+        const averageRating = ratingList.length > 0
+          ? ratingList.reduce((sum, r) => sum + parseInt(r.rating), 0) / ratingList.length
+          : 0;
+
+        return {
+          ...store,
+          averageRating,
+          ratingCount: ratingList.length,
+        };
+      })
+    );
   }
 
   async getStore(id: number): Promise<StoreWithRating | undefined> {
-    const store = this.storesData.get(id);
-    return store ? { ...store, averageRating: 4, ratingCount: 0 } : undefined;
+    const [store] = await db.select().from(stores).where(eq(stores.id, id));
+    if (!store) return undefined;
+
+    const ratingList = await db
+      .select({ rating: ratings.rating })
+      .from(ratings)
+      .where(eq(ratings.storeId, id));
+    
+    const averageRating = ratingList.length > 0
+      ? ratingList.reduce((sum, r) => sum + parseInt(r.rating), 0) / ratingList.length
+      : 0;
+
+    return {
+      ...store,
+      averageRating,
+      ratingCount: ratingList.length,
+    };
   }
 
   async getStoreByOwner(ownerId: string): Promise<Store | undefined> {
-    return Array.from(this.storesData.values()).find(s => s.ownerId === ownerId);
+    const [store] = await db.select().from(stores).where(eq(stores.ownerId, ownerId));
+    return store;
   }
 
   async createStore(store: InsertStore): Promise<Store> {
-    const id = this.nextStoreId++;
-    const newStore: Store = {
-      id,
-      ...store,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.storesData.set(id, newStore);
+    const [newStore] = await db.insert(stores).values(store).returning();
     return newStore;
   }
 
   async updateStore(id: number, store: Partial<InsertStore>): Promise<Store | undefined> {
-    const existing = this.storesData.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, ...store, updatedAt: new Date() };
-    this.storesData.set(id, updated);
+    const [updated] = await db
+      .update(stores)
+      .set(store)
+      .where(eq(stores.id, id))
+      .returning();
     return updated;
   }
 
   // Meal operations
   async getMealsByStore(storeId: number): Promise<Meal[]> {
-    return Array.from(this.mealsData.values()).filter(m => m.storeId === storeId);
+    return await db.select().from(meals).where(eq(meals.storeId, storeId));
   }
 
   async getMeal(id: number): Promise<Meal | undefined> {
-    return this.mealsData.get(id);
+    const [meal] = await db.select().from(meals).where(eq(meals.id, id));
+    return meal;
   }
 
   async createMeal(meal: InsertMeal): Promise<Meal> {
-    const id = this.nextMealId++;
-    const newMeal: Meal = {
-      id,
-      ...meal,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.mealsData.set(id, newMeal);
+    const [newMeal] = await db.insert(meals).values(meal).returning();
     return newMeal;
   }
 
   async updateMeal(id: number, meal: Partial<InsertMeal>): Promise<Meal | undefined> {
-    const existing = this.mealsData.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, ...meal, updatedAt: new Date() };
-    this.mealsData.set(id, updated);
-    return updated;
-  }
-
-  // Staff operations
-  async applyAsStaff(userId: string, storeId: number): Promise<User> {
-    const user = this.usersData.get(userId);
-    if (!user) throw new Error("User not found");
-    const updated = { ...user, role: "staff", storeId };
-    this.usersData.set(userId, updated);
+    const [updated] = await db
+      .update(meals)
+      .set(meal)
+      .where(eq(meals.id, id))
+      .returning();
     return updated;
   }
 
   // Order operations
   async getOrdersByStudent(studentId: string): Promise<OrderWithDetails[]> {
-    return Array.from(this.ordersData.values())
-      .filter(o => o.studentId === studentId)
-      .map(o => ({ ...o, items: [], store: null, student: null }));
+    const orderList = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.studentId, studentId));
+    
+    return Promise.all(
+      orderList.map(async (order) => {
+        const items = await db
+          .select()
+          .from(orderItems)
+          .where(eq(orderItems.orderId, order.id));
+        
+        const [storeData] = await db
+          .select()
+          .from(stores)
+          .where(eq(stores.id, order.storeId));
+        
+        const [student] = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, order.studentId));
+
+        return { ...order, items, store: storeData, student };
+      })
+    );
   }
 
   async getOrdersByStore(storeId: number): Promise<OrderWithDetails[]> {
-    return Array.from(this.ordersData.values())
-      .filter(o => o.storeId === storeId)
-      .map(o => ({ ...o, items: [], store: null, student: null }));
+    const orderList = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.storeId, storeId));
+    
+    return Promise.all(
+      orderList.map(async (order) => {
+        const items = await db
+          .select()
+          .from(orderItems)
+          .where(eq(orderItems.orderId, order.id));
+        
+        const [storeData] = await db
+          .select()
+          .from(stores)
+          .where(eq(stores.id, order.storeId));
+        
+        const [student] = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, order.studentId));
+
+        return { ...order, items, store: storeData, student };
+      })
+    );
   }
 
   async getOrder(id: number): Promise<OrderWithDetails | undefined> {
-    const order = this.ordersData.get(id);
-    return order ? { ...order, items: [], store: null, student: null } : undefined;
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    if (!order) return undefined;
+
+    const items = await db
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.orderId, id));
+    
+    const [storeData] = await db
+      .select()
+      .from(stores)
+      .where(eq(stores.id, order.storeId));
+    
+    const [student] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, order.studentId));
+
+    return { ...order, items, store: storeData, student };
   }
 
   async createOrder(order: InsertOrder, items: InsertOrderItem[]): Promise<Order> {
-    const id = this.nextOrderId++;
-    const newOrder: Order = {
-      id,
-      ...order,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.ordersData.set(id, newOrder);
-    items.forEach(item => {
-      this.orderItemsData.set(this.nextOrderItemId++, { id: this.nextOrderItemId - 1, ...item, orderId: id });
-    });
+    const [newOrder] = await db.insert(orders).values(order).returning();
+    
+    if (items.length > 0) {
+      const itemsWithOrderId = items.map(item => ({
+        ...item,
+        orderId: newOrder.id,
+      }));
+      await db.insert(orderItems).values(itemsWithOrderId);
+    }
+
     return newOrder;
   }
 
   async updateOrderStatus(id: number, status: string): Promise<Order | undefined> {
-    const existing = this.ordersData.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, status, updatedAt: new Date() };
-    this.ordersData.set(id, updated);
+    const [updated] = await db
+      .update(orders)
+      .set({ status })
+      .where(eq(orders.id, id))
+      .returning();
     return updated;
   }
 
   async updateOrderPaymentProof(id: number, paymentProofUrl: string): Promise<Order | undefined> {
-    const existing = this.ordersData.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, paymentProofUrl, status: "payment_submitted", updatedAt: new Date() };
-    this.ordersData.set(id, updated);
+    const [updated] = await db
+      .update(orders)
+      .set({ paymentProofUrl, status: "payment_submitted" })
+      .where(eq(orders.id, id))
+      .returning();
     return updated;
   }
 
   // Rating operations
   async getRatingsByStore(storeId: number): Promise<(Rating & { user?: User })[]> {
-    return Array.from(this.ratingsData.values())
-      .filter(r => r.storeId === storeId)
-      .map(r => ({ ...r, user: this.usersData.get(r.userId) }));
+    const ratingList = await db
+      .select()
+      .from(ratings)
+      .where(eq(ratings.storeId, storeId))
+      .orderBy(desc(ratings.createdAt));
+    
+    return Promise.all(
+      ratingList.map(async (rating) => {
+        const [user] = await db.select().from(users).where(eq(users.id, rating.userId));
+        return { ...rating, user };
+      })
+    );
   }
 
   async createRating(rating: InsertRating): Promise<Rating> {
-    const id = this.nextRatingId++;
-    const newRating: Rating = {
-      id,
-      ...rating,
-      createdAt: new Date(),
-    };
-    this.ratingsData.set(id, newRating);
+    const [newRating] = await db.insert(ratings).values(rating).returning();
     return newRating;
   }
 
   // Message operations
   async getMessagesByOrder(orderId: number): Promise<MessageWithSender[]> {
-    return Array.from(this.messagesData.values())
-      .filter(m => m.orderId === orderId)
-      .map(m => ({ ...m, sender: this.usersData.get(m.senderId) }));
+    const messageList = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.orderId, orderId))
+      .orderBy(messages.createdAt);
+    
+    return Promise.all(
+      messageList.map(async (message) => {
+        const [sender] = await db.select().from(users).where(eq(users.id, message.senderId));
+        return { ...message, sender };
+      })
+    );
   }
 
   async createMessage(message: InsertMessage): Promise<Message> {
-    const id = this.nextMessageId++;
-    const newMessage: Message = {
-      id,
-      ...message,
-      createdAt: new Date(),
-    };
-    this.messagesData.set(id, newMessage);
+    const [newMessage] = await db.insert(messages).values(message).returning();
     return newMessage;
+  }
+
+  // Staff operations
+  async applyAsStaff(userId: string, storeId: number): Promise<User> {
+    const [updated] = await db
+      .update(users)
+      .set({ role: "staff", storeId: storeId })
+      .where(eq(users.id, userId))
+      .returning();
+    return updated;
   }
 }
 
-export const storage = new MemoryStorage();
+export const storage = new DatabaseStorage();
