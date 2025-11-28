@@ -58,6 +58,7 @@ const orderTabs = [
   { value: "payment_submitted", label: "Payment Submitted", icon: Package },
   { value: "confirmed", label: "Confirmed", icon: Check },
   { value: "ready", label: "Ready", icon: ShoppingBag },
+  { value: "claimed", label: "Claimed", icon: Check },
 ];
 
 export default function StaffDashboard() {
@@ -379,6 +380,8 @@ function StaffOrderCard({
         return "ready";
       case "ready":
         return "claimed";
+      case "claimed":
+        return null;
       default:
         return null;
     }
@@ -392,6 +395,8 @@ function StaffOrderCard({
         return "Mark Ready";
       case "ready":
         return "Mark Claimed";
+      case "claimed":
+        return null;
       default:
         return null;
     }
