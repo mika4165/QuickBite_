@@ -64,7 +64,43 @@ export class MemoryStorage implements IStorage {
     this.initializeDefaultData();
   }
 
+  private hashPassword(password: string): string {
+    const salt = crypto.randomBytes(16).toString("hex");
+    const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, "sha512").toString("hex");
+    return `${salt}:${hash}`;
+  }
+
   private initializeDefaultData() {
+    // Initialize merchant users
+    const merchant1Id = crypto.randomUUID();
+    const merchant2Id = crypto.randomUUID();
+
+    this.usersData.set(merchant1Id, {
+      id: merchant1Id,
+      email: "merchant1@gmail.com",
+      password: this.hashPassword("12345"),
+      firstName: "Mang",
+      lastName: "Juan",
+      profileImageUrl: null,
+      role: "staff",
+      storeId: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    this.usersData.set(merchant2Id, {
+      id: merchant2Id,
+      email: "merchant2@gmail.com",
+      password: this.hashPassword("12345"),
+      firstName: "Fresh",
+      lastName: "Bites",
+      profileImageUrl: null,
+      role: "staff",
+      storeId: 2,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
     // Initialize stores
     this.storesData.set(1, {
       id: 1,
@@ -75,7 +111,7 @@ export class MemoryStorage implements IStorage {
       logoUrl: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=100&h=100&fit=crop",
       gcashQrUrl: null,
       isActive: true,
-      ownerId: null,
+      ownerId: merchant1Id,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -89,7 +125,7 @@ export class MemoryStorage implements IStorage {
       logoUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=100&h=100&fit=crop",
       gcashQrUrl: null,
       isActive: true,
-      ownerId: null,
+      ownerId: merchant2Id,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
