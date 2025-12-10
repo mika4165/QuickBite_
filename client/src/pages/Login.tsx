@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import { UtensilsCrossed } from "lucide-react";
+import { UtensilsCrossed, ArrowLeft } from "lucide-react";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -19,31 +19,30 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (response.ok) {
+      const response = await import("@/lib/queryClient").then(m => m.apiRequest("POST", "/api/login", { email, password }));
+      if (response) {
         toast({ title: "Login successful!" });
-        // Invalidate auth cache to refresh user data
         await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-        // Redirect - the Router will handle role-based routing
-        setLocation("/");
+        const profile = await queryClient.fetchQuery({ queryKey: ["/api/auth/user"] });
+        if ((profile as any)?.role === "admin") {
+          setLocation("/admin");
+        } else if ((profile as any)?.role === "staff") {
+          setLocation("/staff");
+        } else {
+          setLocation("/");
+        }
       } else {
-        const data = await response.json();
         toast({
           title: "Login failed",
-          description: data.message || "Invalid email or password",
+          description: "Invalid email or password",
           variant: "destructive",
         });
       }
     } catch (error) {
+      const msg = (error as Error)?.message || "An error occurred during login";
       toast({
         title: "Error",
-        description: "An error occurred during login",
+        description: msg,
         variant: "destructive",
       });
     } finally {
@@ -54,6 +53,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-md">
+        
         <div className="text-center mb-8">
           <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center mx-auto mb-4">
             <UtensilsCrossed className="h-6 w-6 text-primary-foreground" />
@@ -99,6 +99,19 @@ export default function Login() {
             >
               {isLoading ? "Logging in..." : "Log In"}
             </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation("/")}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-muted px-3 py-2 border border-border text-sm hover-elevate"
+              aria-label="Go back"
+              data-testid="button-back-login"
+            >
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-background border border-border">
+                <ArrowLeft className="h-3.5 w-3.5" />
+              </span>
+              Back
+            </Button>
           </form>
 
           <div className="relative mb-6">
@@ -129,11 +142,15 @@ export default function Login() {
             <p className="text-xs text-muted-foreground text-center mb-3">
               Are you a merchant? Contact the admin to apply via the form
             </p>
-            <a href="https://forms.gle/QotJYMzE85Lqe1Xj6" target="_blank" rel="noopener noreferrer">
-              <Button variant="ghost" size="sm" className="w-full text-xs" data-testid="button-merchant-form">
-                Merchant Application Form
-              </Button>
-            </a>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs"
+              onClick={() => setLocation("/merchant")}
+              data-testid="button-merchant-form"
+            >
+              Merchant Application Form
+            </Button>
           </div>
         </Card>
 

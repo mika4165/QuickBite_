@@ -90,6 +90,7 @@ export const ratings = pgTable("ratings", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   storeId: integer("store_id").references(() => stores.id).notNull(),
   userId: varchar("user_id").references(() => users.id).notNull(),
+  orderId: integer("order_id").references(() => orders.id), // Optional: links review to specific order
   rating: integer("rating").notNull(), // 1-5
   comment: text("comment"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
@@ -104,6 +105,42 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
+// Approved staff credentials (salted+hashed)
+export const approvedStaff = pgTable("approved_staff", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  email: varchar("email").unique().notNull(),
+  passwordSalt: varchar("password_salt").notNull(),
+  passwordHash: varchar("password_hash").notNull(),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+// Merchant applications (optional; used to bootstrap staff stores)
+export const merchantApplications = pgTable("merchant_applications", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: varchar("user_id"),
+  email: varchar("email").notNull(),
+  storeName: varchar("store_name").notNull(),
+  category: varchar("category"),
+  description: text("description"),
+  phone: varchar("phone"),
+  status: varchar("status").default("pending"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+// Rejected staff/merchant applications (tracks rejected applications)
+export const rejectedStaff = pgTable("rejected_staff", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  email: varchar("email").notNull(),
+  storeName: varchar("store_name").notNull(),
+  description: text("description"),
+  phone: varchar("phone"),
+  category: varchar("category"),
+  reason: text("reason"),
+  rejectedAt: timestamp("rejected_at").default(sql`CURRENT_TIMESTAMP`),
+  rejectedBy: varchar("rejected_by").references(() => users.id),
+  originalApplicationId: integer("original_application_id").references(() => merchantApplications.id),
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type Store = typeof stores.$inferSelect;
@@ -112,26 +149,11 @@ export type Order = typeof orders.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type Rating = typeof ratings.$inferSelect;
 export type Message = typeof messages.$inferSelect;
+export type ApprovedStaff = typeof approvedStaff.$inferSelect;
+export type MerchantApplication = typeof merchantApplications.$inferSelect;
+export type RejectedStaff = typeof rejectedStaff.$inferSelect;
 
-// Insert schemas
-export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertStoreSchema = createInsertSchema(stores).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertMealSchema = createInsertSchema(meals).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertOrderItemSchema = createInsertSchema(orderItems).omit({ id: true });
-export const insertRatingSchema = createInsertSchema(ratings).omit({ id: true, createdAt: true }).extend({
-  rating: z.number().int().min(1).max(5),
-});
-export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true });
-
-// Inferred types from insert schemas
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type InsertStore = z.infer<typeof insertStoreSchema>;
-export type InsertMeal = z.infer<typeof insertMealSchema>;
-export type InsertOrder = z.infer<typeof insertOrderSchema>;
-export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
-export type InsertRating = z.infer<typeof insertRatingSchema>;
-export type InsertMessage = z.infer<typeof insertMessageSchema>;
+// Insert schemas are not required for current client-side usage
 
 // Complex types
 export type StoreWithRating = Store & { averageRating: number; ratingCount: number };

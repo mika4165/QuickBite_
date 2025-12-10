@@ -123,8 +123,8 @@ function OrderCard({ order }: { order: OrderWithDetails }) {
                 {order.items?.slice(0, 3).map((item) => (
                   <img
                     key={item.id}
-                    src={item.meal?.imageUrl || defaultImage}
-                    alt={item.meal?.name}
+                    src={defaultImage}
+                    alt={`Meal #${item.mealId}`}
                     className="w-8 h-8 rounded object-cover"
                   />
                 ))}

@@ -41,7 +41,7 @@ export function StoreCard({ store }: StoreCardProps) {
             </Avatar>
           </div>
           
-          {store.category && (
+          {store.category && !String(store.category).startsWith("CFG:") && (
             <Badge 
               variant="secondary" 
               className="absolute top-3 right-3 bg-background/90 backdrop-blur-sm"

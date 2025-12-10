@@ -1,32 +1,22 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { ArrowLeft, MessageCircle, ShoppingCart, Star } from "lucide-react";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
 import { MealCard } from "@/components/MealCard";
 import { StarRating } from "@/components/StarRating";
 import { ReviewCard } from "@/components/ReviewCard";
 import { useCart } from "@/contexts/CartContext";
-import { useAuth } from "@/hooks/useAuth";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { isUnauthorizedError } from "@/lib/authUtils";
 import type { StoreWithRating, Meal, Rating, User } from "@shared/schema";
 
 export default function StoreDetail() {
   const { id } = useParams<{ id: string }>();
-  const { toast } = useToast();
-  const { user, isAuthenticated } = useAuth();
   const { getTotalItems, getTotalAmount } = useCart();
-  const [reviewRating, setReviewRating] = useState(0);
-  const [reviewComment, setReviewComment] = useState("");
   
   const { data: store, isLoading: storeLoading } = useQuery<StoreWithRating>({
     queryKey: ["/api/stores", id],
@@ -42,45 +32,16 @@ export default function StoreDetail() {
     enabled: !!id,
   });
 
-  const submitReview = useMutation({
-    mutationFn: async () => {
-      return apiRequest("POST", `/api/stores/${id}/reviews`, {
-        rating: reviewRating,
-        comment: reviewComment || undefined,
-      });
-    },
-    onSuccess: () => {
-      toast({ title: "Review submitted!", description: "Thank you for your feedback." });
-      setReviewRating(0);
-      setReviewComment("");
-      queryClient.invalidateQueries({ queryKey: ["/api/stores", id, "reviews"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stores", id] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stores"] });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "Please log in to leave a review.",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to submit review. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
   const totalItems = getTotalItems();
   const totalAmount = getTotalAmount();
   const mealCategories = meals
-    ? [...new Set(meals.map((m) => m.category).filter(Boolean))]
+    ? Array.from(
+        new Set(
+          meals
+            .map((m) => m.category)
+            .filter((c): c is string => typeof c === "string" && c.length > 0),
+        ),
+      )
     : [];
 
   const defaultBanner = "https://images.unsplash.com/photo-1567521464027-f127ff144326?w=1200&h=400&fit=crop";
@@ -151,7 +112,7 @@ export default function StoreDetail() {
                 {store.name}
               </h1>
               <div className="flex items-center gap-3 mt-1 flex-wrap">
-                {store.category && (
+                {store.category && !String(store.category).startsWith("CFG:") && (
                   <Badge variant="secondary" className="bg-white/20 text-white border-0">
                     {store.category}
                   </Badge>
@@ -238,40 +199,6 @@ export default function StoreDetail() {
 
           <TabsContent value="reviews">
             <div className="space-y-6">
-              {isAuthenticated && (
-                <Card className="p-6">
-                  <h3 className="font-semibold mb-4">Leave a Review</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Your Rating</label>
-                      <StarRating
-                        rating={reviewRating}
-                        size="lg"
-                        interactive
-                        onRatingChange={setReviewRating}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Comment (optional)</label>
-                      <Textarea
-                        placeholder="Share your experience..."
-                        value={reviewComment}
-                        onChange={(e) => setReviewComment(e.target.value)}
-                        rows={3}
-                        data-testid="input-review-comment"
-                      />
-                    </div>
-                    <Button
-                      onClick={() => submitReview.mutate()}
-                      disabled={reviewRating === 0 || submitReview.isPending}
-                      data-testid="button-submit-review"
-                    >
-                      {submitReview.isPending ? "Submitting..." : "Submit Review"}
-                    </Button>
-                  </div>
-                </Card>
-              )}
-
               {reviews && reviews.length > 0 ? (
                 <div className="space-y-4">
                   {reviews.map((review) => (
@@ -281,7 +208,7 @@ export default function StoreDetail() {
               ) : (
                 <div className="text-center py-8">
                   <Star className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                  <p className="text-muted-foreground">No reviews yet. Be the first!</p>
+                  <p className="text-muted-foreground">No reviews yet.</p>
                 </div>
               )}
             </div>

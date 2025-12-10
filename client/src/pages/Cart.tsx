@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { ArrowLeft, Minus, Plus, Trash2, Clock, ShoppingBag } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,24 +17,56 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Header } from "@/components/Header";
 import { useCart } from "@/contexts/CartContext";
 
-const pickupTimes = [
-  "10:00 AM",
-  "10:30 AM",
-  "11:00 AM",
-  "11:30 AM",
-  "12:00 PM",
-  "12:30 PM",
-  "1:00 PM",
-  "1:30 PM",
-  "2:00 PM",
-  "2:30 PM",
-  "3:00 PM",
-];
+function parseStorePickupTimes(store: any | null): string[] {
+  const cat = store?.category || "";
+  if (typeof cat === "string" && cat.startsWith("CFG:")) {
+    try {
+      const cfg = JSON.parse(cat.slice(4));
+      const slots = Array.isArray(cfg?.slots) ? cfg.slots : [];
+      return slots.map((s: any) => String(s.time)).filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function generateTimeSlots(): string[] {
+  const slots: string[] = [];
+  
+  // Generate slots from 10:00 AM to 6:00 PM in 30-minute intervals
+  let hour = 10;
+  let minute = 0;
+  
+  // Generate slots until 6:00 PM (18:00)
+  while (hour < 18) {
+    const period = hour >= 12 ? "PM" : "AM";
+    const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+    const timeString = `${displayHour}:${minute.toString().padStart(2, "0")} ${period}`;
+    slots.push(timeString);
+    
+    // Move to next 30-minute slot
+    minute += 30;
+    if (minute >= 60) {
+      minute = 0;
+      hour += 1;
+    }
+  }
+  
+  // Add 6:00 PM
+  slots.push("6:00 PM");
+  
+  return slots;
+}
 
 export default function Cart() {
   const [, navigate] = useLocation();
   const { items, store, updateQuantity, removeItem, clearCart, getTotalAmount } = useCart();
   const [pickupTime, setPickupTime] = useState("");
+  const [storePickupTimes, setStorePickupTimes] = useState<string[]>([]);
+  useEffect(() => {
+    setStorePickupTimes(parseStorePickupTimes(store));
+  }, [store]);
   const [notes, setNotes] = useState("");
   const totalAmount = getTotalAmount();
 
@@ -186,11 +218,36 @@ export default function Cart() {
                       <SelectValue placeholder="Select time" />
                     </SelectTrigger>
                     <SelectContent>
-                      {pickupTimes.map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
+                      {(() => {
+                        // Use store pickup times if available, otherwise generate default slots
+                        const availableTimes = storePickupTimes.length 
+                          ? storePickupTimes 
+                          : generateTimeSlots();
+                        
+                        // Filter out times after 6:00 PM
+                        return availableTimes
+                          .filter((time) => {
+                            // Check if time is after 6:00 PM
+                            const [timePart, period] = time.split(" ");
+                            const [hours] = timePart.split(":").map(Number);
+                            let hour24 = hours;
+                            if (period === "PM" && hours !== 12) {
+                              hour24 = hours + 12;
+                            } else if (period === "AM" && hours === 12) {
+                              hour24 = 0;
+                            }
+                            
+                            // Only allow times up to 6:00 PM
+                            if (hour24 > 18) return false;
+                            
+                            return true;
+                          })
+                          .map((time) => (
+                            <SelectItem key={time} value={time}>
+                              {time}
+                            </SelectItem>
+                          ));
+                      })()}
                     </SelectContent>
                   </Select>
                 </div>

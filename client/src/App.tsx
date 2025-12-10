@@ -16,27 +16,21 @@ import Checkout from "@/pages/Checkout";
 import Orders from "@/pages/Orders";
 import OrderDetail from "@/pages/OrderDetail";
 import Messages from "@/pages/Messages";
+import Notifications from "@/pages/Notifications";
+import StaffNotifications from "@/pages/StaffNotifications";
 import StaffDashboard from "@/pages/StaffDashboard";
 import StaffSignup from "@/pages/StaffSignup";
+import MerchantApply from "@/pages/MerchantApply";
+import AdminDashboard from "@/pages/AdminDashboard";
 
 function Router() {
-  const { isAuthenticated, isLoading, user } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  const { isAuthenticated, user } = useAuth();
 
   if (!isAuthenticated) {
     return (
       <Switch>
         <Route path="/" component={Landing} />
+        <Route path="/merchant" component={MerchantApply} />
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
         <Route path="/staff-signup" component={StaffSignup} />
@@ -46,17 +40,21 @@ function Router() {
   }
 
   const isStaff = user?.role === "staff";
+  const isAdmin = user?.role === "admin";
 
   return (
     <Switch>
-      <Route path="/" component={isStaff ? StaffDashboard : Home} />
+      <Route path="/" component={isAdmin ? AdminDashboard : isStaff ? StaffDashboard : Home} />
+      <Route path="/merchant" component={isAdmin ? AdminDashboard : isStaff ? StaffDashboard : MerchantApply} />
       <Route path="/store/:id" component={StoreDetail} />
       <Route path="/cart" component={Cart} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/orders" component={Orders} />
       <Route path="/orders/:id" component={OrderDetail} />
       <Route path="/messages" component={Messages} />
+      <Route path="/notifications" component={isStaff ? StaffNotifications : Notifications} />
       <Route path="/staff" component={StaffDashboard} />
+      <Route path="/admin" component={AdminDashboard} />
       <Route path="/staff-signup" component={StaffSignup} />
       <Route component={NotFound} />
     </Switch>

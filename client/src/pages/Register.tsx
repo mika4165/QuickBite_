@@ -48,30 +48,39 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (response.ok) {
+      const response = await import("@/lib/queryClient").then(m => m.apiRequest("POST", "/api/register", { email, password }));
+      // Only show success if we actually got a valid response with the correct message
+      if (response && response.message === "Account created") {
         toast({ title: "Account created successfully! Please log in." });
-        setLocation("/login");
+        setTimeout(() => setLocation("/login"), 1000);
       } else {
-        const data = await response.json();
+        // If response doesn't have the expected message, treat as error
         toast({
           title: "Registration failed",
-          description: data.message || "An error occurred",
+          description: response?.message || "An error occurred during registration",
           variant: "destructive",
         });
       }
     } catch (error) {
+      // Extract error message - handle both Error objects and string messages
+      let errorMessage = "An error occurred during registration";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === "string") {
+        errorMessage = error;
+      } else if (error && typeof error === "object" && "message" in error) {
+        errorMessage = String(error.message);
+      }
+      
+      console.error("Registration error:", error);
+      
+      // Show error toast - this will display the validation error
       toast({
         title: "Error",
-        description: "An error occurred during registration",
+        description: errorMessage,
         variant: "destructive",
       });
+      // Don't navigate on error - let user see the error and try again
     } finally {
       setIsLoading(false);
     }

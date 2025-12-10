@@ -75,7 +75,7 @@ export default function Landing() {
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </a>
-                <a href="https://forms.gle/QotJYMzE85Lqe1Xj6" target="_blank" rel="noopener noreferrer">
+                <a href="/merchant">
                   <Button size="lg" variant="outline" className="w-full sm:w-auto" data-testid="button-be-merchant">
                     Be a Merchant
                   </Button>

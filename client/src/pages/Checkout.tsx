@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
 import { useCart } from "@/contexts/CartContext";
 import { apiRequest } from "@/lib/queryClient";
+import { getSupabase } from "@/lib/supabase";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import type { Store } from "@shared/schema";
 
@@ -48,20 +49,19 @@ export default function Checkout() {
       
       setIsUploading(true);
       
-      let paymentProofUrl = null;
+      let paymentProofUrl = null as string | null;
       if (paymentProof) {
-        const formData = new FormData();
-        formData.append("file", paymentProof);
-        formData.append("type", "payment_proof");
-        
-        const uploadRes = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
+        const supabase = getSupabase();
+        const fileName = `${Date.now()}-${paymentProof.name}`.replace(/\s+/g, "-");
+        const filePath = `payment_proof/${store.id}/${fileName}`;
+        const { error: uploadErr } = await supabase.storage.from("public").upload(filePath, paymentProof, {
+          upsert: true,
+          cacheControl: "3600",
+          contentType: paymentProof.type,
         });
-        
-        if (!uploadRes.ok) throw new Error("Failed to upload payment proof");
-        const uploadData = await uploadRes.json();
-        paymentProofUrl = uploadData.url;
+        if (uploadErr) throw new Error(uploadErr.message);
+        const { data: pub } = await supabase.storage.from("public").getPublicUrl(filePath);
+        paymentProofUrl = pub.publicUrl;
       }
       
       return apiRequest("POST", "/api/orders", {
@@ -94,7 +94,7 @@ export default function Checkout() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+          window.location.href = "/login";
         }, 500);
         return;
       }
