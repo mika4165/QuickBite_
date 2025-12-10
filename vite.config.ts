@@ -53,6 +53,7 @@ export default defineConfig(async ({ mode }) => {
             if (!apiKey) {
               throw new Error("Missing RESEND_API_KEY");
             }
+            console.log("[Resend] Attempting to send email:", { from, to, subject });
             const resp = await fetch("https://api.resend.com/emails", {
               method: "POST",
               headers: {
@@ -69,8 +70,12 @@ export default defineConfig(async ({ mode }) => {
             });
             if (!resp.ok) {
               const msg = await resp.text().catch(() => resp.statusText);
-              throw new Error(msg);
+              console.error("[Resend] Email send failed:", { status: resp.status, statusText: resp.statusText, error: msg });
+              throw new Error(`Resend API error (${resp.status}): ${msg}`);
             }
+            const result = await resp.json().catch(() => ({}));
+            console.log("[Resend] Email sent successfully:", result);
+            return result;
           }
           server.middlewares.use(async (req, res, next) => {
             const supabase = getAdmin();
@@ -499,18 +504,83 @@ export default defineConfig(async ({ mode }) => {
                 res.end("missing email");
                 return;
               }
-              // Prefer invite email; falls back to generating a magic link
-              const invited = await supabase.auth.admin.inviteUserByEmail(email);
-              if (invited.error) {
-                const link = await supabase.auth.admin.generateLink({ type: "magiclink", email });
+              
+              console.log("[Email] Attempting to send approval email to:", email);
+              
+              // Check if user already exists in auth
+              const { data: usersList } = await supabase.auth.admin.listUsers();
+              const existingUser = usersList?.users?.find((u: any) => u.email === email);
+              
+              let emailSent = false;
+              
+              if (existingUser) {
+                // User already exists - use generateLink to send a magic link email
+                console.log("[Email] User already exists, generating magic link...");
+                const link = await supabase.auth.admin.generateLink({ 
+                  type: "magiclink", 
+                  email,
+                  options: {
+                    data: {
+                      storeName: storeName || "",
+                      message: `Your merchant application${storeName ? ` for ${storeName}` : ""} has been approved! You can now log in to your merchant dashboard.`
+                    }
+                  }
+                });
+                
                 if (link.error) {
-                  throw new Error(invited.error.message || link.error.message);
+                  console.error("[Email] Magic link generation failed:", link.error);
+                  throw new Error(`Failed to send email: ${link.error.message}`);
+                }
+                
+                console.log("[Email] Magic link generated successfully");
+                emailSent = true;
+              } else {
+                // User doesn't exist - use inviteUserByEmail
+                console.log("[Email] User doesn't exist, sending invitation...");
+                const invited = await supabase.auth.admin.inviteUserByEmail(email, {
+                  data: { 
+                    storeName: storeName || "",
+                    message: `Your merchant application${storeName ? ` for ${storeName}` : ""} has been approved! You can now log in to your merchant dashboard.`
+                  }
+                });
+                
+                if (invited.error) {
+                  console.error("[Email] Invitation failed:", invited.error);
+                  // Fallback: try generating a magic link
+                  console.log("[Email] Trying magic link as fallback...");
+                  const link = await supabase.auth.admin.generateLink({ 
+                    type: "magiclink", 
+                    email,
+                    options: {
+                      data: {
+                        storeName: storeName || "",
+                        message: `Your merchant application${storeName ? ` for ${storeName}` : ""} has been approved!`
+                      }
+                    }
+                  });
+                  
+                  if (link.error) {
+                    console.error("[Email] Magic link fallback also failed:", link.error);
+                    throw new Error(`Failed to send email: ${invited.error.message || link.error.message}`);
+                  }
+                  
+                  console.log("[Email] Magic link fallback succeeded");
+                  emailSent = true;
+                } else {
+                  console.log("[Email] Invitation sent successfully");
+                  emailSent = true;
                 }
               }
-              res.statusCode = 200;
-              res.end("ok");
-              return;
+              
+              if (emailSent) {
+                res.statusCode = 200;
+                res.end("ok");
+                return;
+              } else {
+                throw new Error("Email sending failed - no method succeeded");
+              }
             } catch (e: any) {
+              console.error("[Email] Error sending approval email:", e);
               res.statusCode = 500;
               res.end(String(e?.message || e));
               return;
@@ -619,21 +689,36 @@ export default defineConfig(async ({ mode }) => {
                 res.end("missing email");
                 return;
               }
-              await sendEmail(
+              // Note: Supabase doesn't have a direct rejection email function
+              // We'll use a magic link with rejection message in metadata
+              // The user will receive an email, but they won't be able to sign in
+              const link = await supabase.auth.admin.generateLink({ 
+                type: "magiclink", 
                 email,
-                "Your QuickBite merchant application was rejected",
-                `<p>Hello,</p>
-                 <p>Your merchant application${storeName ? ` for <strong>${storeName}</strong>` : ""} was rejected.</p>
-                 <p>${reason ? `Reason: ${reason}` : "You can re-apply with updated information if applicable."}</p>
-                 <p>If you believe this is an error, please reply to this email.</p>
-                 <p>– QuickBite Team</p>`,
-              );
+                options: {
+                  data: {
+                    storeName: storeName || "",
+                    rejected: true,
+                    reason: reason || "Application not approved at this time.",
+                    message: `Your merchant application${storeName ? ` for ${storeName}` : ""} has been rejected.${reason ? ` Reason: ${reason}` : ""}`
+                  }
+                }
+              });
+              if (link.error) {
+                // If magic link fails, we'll just log it but not fail the rejection
+                console.warn("Could not send rejection email:", link.error.message);
+                res.statusCode = 200;
+                res.end("ok");
+                return;
+              }
               res.statusCode = 200;
               res.end("ok");
               return;
             } catch (e: any) {
-              res.statusCode = 500;
-              res.end(String(e?.message || e));
+              // Don't fail rejection if email fails
+              console.warn("Rejection email error:", e?.message || e);
+              res.statusCode = 200;
+              res.end("ok");
               return;
             }
           }

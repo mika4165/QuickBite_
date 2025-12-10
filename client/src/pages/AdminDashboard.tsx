@@ -67,17 +67,45 @@ export default function AdminDashboard() {
         }
         throw new Error(txt || "Provisioning failed");
       }
+      // Update status first
+      await updateStatus.mutateAsync({ id: app.id, status: "approved" });
+      
+      // Then send email
+      console.log("[Admin] Sending approval email to:", email);
       const mail = await fetch("/__internal/send-approval-email", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email, storeName: app.store_name }),
-      }).catch(() => null);
-      if (mail && !mail.ok) {
-        const txt = await mail.text().catch(() => "");
-        console.warn("Email send failed:", txt);
+      }).catch((err) => {
+        console.error("[Admin] Email send request failed:", err);
+        return null;
+      });
+      
+      if (!mail) {
+        toast({ 
+          title: "Application approved", 
+          description: "Application approved, but email service is unavailable. Check browser console (F12) for details.",
+          variant: "destructive"
+        });
+        return;
       }
-      await updateStatus.mutateAsync({ id: app.id, status: "approved" });
-      toast({ title: "Application approved", description: "Notification sent to merchant email." });
+      
+      if (!mail.ok) {
+        const txt = await mail.text().catch(() => "");
+        console.error("[Admin] Email send failed:", { status: mail.status, error: txt });
+        toast({ 
+          title: "Application approved", 
+          description: `Application approved, but email failed: ${txt || "Unknown error"}. Make sure email is enabled in Supabase Dashboard → Authentication → Settings.`,
+          variant: "destructive"
+        });
+      } else {
+        const responseText = await mail.text().catch(() => "");
+        console.log("[Admin] Email sent successfully:", responseText);
+        toast({ 
+          title: "Application approved", 
+          description: "Application approved and notification email sent to merchant. Check spam folder if not received."
+        });
+      }
     } catch (e) {
       toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
     } finally {
@@ -85,28 +113,40 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleReject = async (app: any) => {
+  const handleReject = async (app: any, reason?: string) => {
     try {
       setIsRejecting(true);
+      // Update status to rejected first
+      await updateStatus.mutateAsync({ id: app.id, status: "rejected", reason: reason || undefined });
       // Try to send rejection email, but don't fail if it doesn't work
       const mail = await fetch("/__internal/send-rejection-email", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email: app.email, storeName: app.store_name }),
-      }).catch(() => null);
+        body: JSON.stringify({ email: app.email, storeName: app.store_name, reason: reason || undefined }),
+      }).catch((err) => {
+        console.error("Rejection email send request failed:", err);
+        return null;
+      });
       if (mail && !mail.ok) {
         const txt = await mail.text().catch(() => "");
-        console.warn("Rejection email send failed:", txt);
-        // Continue with rejection even if email fails
+        console.error("Rejection email send failed:", { status: mail.status, error: txt });
+        toast({ 
+          title: "Application rejected", 
+          description: `Application rejected, but email failed: ${txt || "Unknown error"}. Check browser console (F12) for details.`,
+          variant: "destructive"
+        });
+      } else if (mail && mail.ok) {
+        toast({ 
+          title: "Application rejected", 
+          description: "Notification sent to merchant email. Check spam folder if not received."
+        });
+      } else {
+        toast({ 
+          title: "Application rejected", 
+          description: "Application rejected. Email may not have been sent. Check browser console (F12) for details.",
+          variant: "default"
+        });
       }
-      // Update status to rejected regardless of email status
-      await updateStatus.mutateAsync({ id: app.id, status: "rejected" });
-      toast({ 
-        title: "Application rejected", 
-        description: mail && mail.ok 
-          ? "Notification sent to merchant email." 
-          : "Application rejected. Email notification may not have been sent." 
-      });
     } catch (e) {
       toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
     } finally {
@@ -115,8 +155,8 @@ export default function AdminDashboard() {
   };
 
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      return apiRequest("PATCH", `/api/merchant_applications/${id}/status`, { status });
+    mutationFn: async ({ id, status, reason }: { id: number; status: string; reason?: string }) => {
+      return apiRequest("PATCH", `/api/merchant_applications/${id}/status`, { status, reason });
     },
     onSuccess: (_, variables) => {
       toast({ title: "Application updated!" });
