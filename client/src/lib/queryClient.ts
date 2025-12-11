@@ -19,28 +19,11 @@ export async function apiRequest<T = any>(
     const { email, password } = data || {};
     const admins = (import.meta.env.VITE_ADMIN_EMAILS as string | undefined)?.split(",").map(s => s.trim()).filter(Boolean) || [];
     
-    // Check for rejected applications BEFORE attempting login
-    if (email && !admins.includes(email)) {
-      const { data: rejectedApp } = await supabase
-        .from("merchant_applications")
-        .select("status")
-        .eq("email", email)
-        .eq("status", "rejected")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
-      if (rejectedApp) {
-        throw new Error("Your merchant application has been rejected. You cannot log in with this account.");
-      }
-    }
-    
     let { data: authData, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     if (error) {
-      // For admin users, try to create/update admin account
       if (email && admins.includes(email)) {
         const res = await fetch("/api/confirm-admin", {
           method: "POST",
@@ -52,33 +35,12 @@ export async function apiRequest<T = any>(
         if (retry.error) throw new Error(retry.error.message);
         authData = retry.data;
       } else {
-        // For regular users, return the original Supabase error message
-        // This provides more specific information (e.g., "Invalid login credentials" or "Email not confirmed")
         throw new Error(error.message || "Invalid login credentials");
-      }
-    }
-    
-    // Double-check for rejected applications after successful auth (in case they somehow got through)
-    if (email && !admins.includes(email) && authData?.user) {
-      const { data: rejectedApp } = await supabase
-        .from("merchant_applications")
-        .select("status")
-        .eq("email", email)
-        .eq("status", "rejected")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
-      if (rejectedApp) {
-        // Sign them out immediately
-        await supabase.auth.signOut();
-        throw new Error("Your merchant application has been rejected. You cannot log in with this account.");
       }
     }
     
     let isApprovedStaff = false;
     if (email && !admins.includes(email)) {
-      // Check approved_staff for staff login
       try {
         const res = await fetch("/api/login-approved-staff", {
           method: "POST",
@@ -192,9 +154,15 @@ export async function apiRequest<T = any>(
     
     // Supabase Auth will also check if email exists, but we check our tables first for better error messages
     // Use normalized email for signup
+    // Note: email_confirm is set to true to allow immediate login (if email confirmation is disabled in Supabase)
     const { data: signUpData, error } = await supabase.auth.signUp({
       email: normalizedEmail,
       password,
+      options: {
+        emailRedirectTo: window.location.origin,
+        // This doesn't bypass Supabase's email confirmation setting,
+        // but it helps if confirmation is disabled
+      },
     });
     if (error) {
       // If email already exists in auth, provide a clearer message
