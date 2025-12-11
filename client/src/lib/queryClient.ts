@@ -236,51 +236,55 @@ export async function apiRequest<T = any>(
     const { email, storeName, description, phone } = data || {};
     if (!email || !storeName) throw new Error("Email and store name required");
     
-    // Comprehensive check: Ensure email is not used anywhere
-    // FIRST: Check if email exists in users table (any role) - this catches student/user accounts
-    const { data: existingUser } = await supabase
-      .from("users")
-      .select("email, role")
-      .eq("email", email)
-      .maybeSingle();
+    // Normalize email to lowercase for consistent checking
+    const normalizedEmail = String(email).toLowerCase().trim();
     
-    if (existingUser) {
-      throw new Error("This email is already registered as a user. Please use a different email or log in with your existing account.");
-    }
-    
-    // Also check Supabase Auth to catch any registered emails
-    // Note: This requires admin access, so we'll rely on the users table check above
-    // The internal endpoint handles Auth checks more thoroughly
-    
-    // Check if email already has a pending or approved merchant application
-    const { data: existingApp } = await supabase
-      .from("merchant_applications")
-      .select("email, status")
-      .eq("email", email)
-      .in("status", ["pending", "approved"])
-      .maybeSingle();
-    
-    if (existingApp) {
-      if (existingApp.status === "approved") {
-        throw new Error("This email already has an approved merchant application. Please use a different email.");
+    // Use internal endpoint with service key to bypass RLS and check email existence
+    // This ensures we can check email existence even when not authenticated
+    try {
+      const checkRes = await fetch("/api/check-email-exists", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail }),
+      });
+      
+      if (checkRes.ok) {
+        const checkData = await checkRes.json();
+        
+        // If email exists anywhere, block merchant application
+        if (checkData.exists) {
+          // Provide specific error message based on where email was found
+          if (checkData.inUsers && checkData.userRole) {
+            throw new Error(`This email is already registered as a ${checkData.userRole}. Please use a different email or log in with your existing account.`);
+          } else if (checkData.type === "merchant_application") {
+            if (checkData.appStatus === "approved") {
+              throw new Error("This email already has an approved merchant application. Please use a different email.");
+            } else {
+              throw new Error("This email already has a pending merchant application. Please wait for approval or use a different email.");
+            }
+          } else if (checkData.inApprovedStaff) {
+            throw new Error("This email is already registered as staff. Please use a different email.");
+          } else {
+            throw new Error("This email is already registered. Please use a different email or log in with your existing account.");
+          }
+        }
       } else {
-        throw new Error("This email already has a pending merchant application. Please wait for approval or use a different email.");
+        // If check endpoint fails, log but continue (fallback to direct query)
+        console.warn("Email check endpoint failed, falling back to direct query");
+        const checkText = await checkRes.text().catch(() => "");
+        throw new Error(`Unable to verify email availability: ${checkText || checkRes.statusText}`);
       }
-    }
-    
-    // Check if email is already in approved_staff
-    const { data: existingStaff } = await supabase
-      .from("approved_staff")
-      .select("email")
-      .eq("email", email)
-      .maybeSingle();
-    
-    if (existingStaff) {
-      throw new Error("This email is already registered as staff. Please use a different email.");
+    } catch (error: any) {
+      // If it's already an Error with a message, re-throw it
+      if (error instanceof Error) {
+        throw error;
+      }
+      // Otherwise, wrap it
+      throw new Error(error?.message || "Unable to verify email availability. Please try again later.");
     }
     
     const payload = {
-      email: String(email),
+      email: normalizedEmail,
       store_name: String(storeName),
       category: null,
       description: description ? String(description) : null,
