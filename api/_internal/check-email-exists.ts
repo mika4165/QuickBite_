@@ -18,11 +18,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  // Log for debugging - this will help us see what's happening
-  console.log("[check-email-exists] Method:", req.method, "URL:", req.url, "Body type:", typeof req.body);
+  // Log EVERYTHING for debugging
+  console.log("[check-email-exists] ===== FUNCTION CALLED =====");
+  console.log("[check-email-exists] Method:", req.method);
+  console.log("[check-email-exists] URL:", req.url);
+  console.log("[check-email-exists] Query:", req.query);
+  console.log("[check-email-exists] Body type:", typeof req.body);
+  console.log("[check-email-exists] Body:", req.body);
+  console.log("[check-email-exists] Headers:", req.headers);
 
   // Accept both POST and GET (for testing)
-  const method = req.method?.toUpperCase();
+  const method = (req.method || "").toUpperCase();
+  
+  // Log method check
+  console.log("[check-email-exists] Method check - received:", method, "is POST?", method === "POST", "is GET?", method === "GET");
+  
   if (method !== "POST" && method !== "GET") {
     console.log("[check-email-exists] Method not allowed. Received:", method, "Expected: POST or GET");
     res.status(405).json({ error: `Method not allowed. Received: ${method || 'undefined'}, Expected: POST` });
