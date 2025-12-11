@@ -80,7 +80,7 @@ export default defineConfig(async ({ mode }) => {
           server.middlewares.use(async (req, res, next) => {
             const supabase = getAdmin();
             if (!supabase) return next();
-          if ((req.url === "/__internal/ping" || req.url === "/api/__internal/ping") && req.method === "GET") {
+          if ((req.url === "/__internal/ping" || req.url === "/api/_internal/ping") && req.method === "GET") {
             try {
               // Return 200 only if admin client is configured
               res.statusCode = 200;
@@ -92,7 +92,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/check-email-exists" || req.url === "/api/__internal/check-email-exists") && req.method === "POST") {
+          if ((req.url === "/__internal/check-email-exists" || req.url === "/api/_internal/check-email-exists") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email } = JSON.parse(raw || "{}");
@@ -152,7 +152,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/health" || req.url === "/api/__internal/health") && req.method === "GET") {
+          if ((req.url === "/__internal/health" || req.url === "/api/_internal/health") && req.method === "GET") {
             try {
               const tables = ["users", "stores", "merchant_applications", "approved_staff"];
               const missing: string[] = [];
@@ -170,7 +170,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/provision-staff" || req.url === "/api/__internal/provision-staff") && req.method === "POST") {
+          if ((req.url === "/__internal/provision-staff" || req.url === "/api/_internal/provision-staff") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email, password } = JSON.parse(raw || "{}");
@@ -258,7 +258,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/submit-merchant-app" || req.url === "/api/__internal/submit-merchant-app") && req.method === "POST") {
+          if ((req.url === "/__internal/submit-merchant-app" || req.url === "/api/_internal/submit-merchant-app") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email, storeName, description, password } = JSON.parse(raw || "{}");
@@ -381,7 +381,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/login-approved-staff" || req.url === "/api/__internal/login-approved-staff") && req.method === "POST") {
+          if ((req.url === "/__internal/login-approved-staff" || req.url === "/api/_internal/login-approved-staff") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email, password } = JSON.parse(raw || "{}");
@@ -464,7 +464,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/confirm-admin" || req.url === "/api/__internal/confirm-admin") && req.method === "POST") {
+          if ((req.url === "/__internal/confirm-admin" || req.url === "/api/_internal/confirm-admin") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email, password } = JSON.parse(raw || "{}");
@@ -495,7 +495,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/send-approval-email" || req.url === "/api/__internal/send-approval-email") && req.method === "POST") {
+          if ((req.url === "/__internal/send-approval-email" || req.url === "/api/_internal/send-approval-email") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email, storeName } = JSON.parse(raw || "{}");
@@ -586,7 +586,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/revoke-staff-access" || req.url === "/api/__internal/revoke-staff-access") && req.method === "POST") {
+          if ((req.url === "/__internal/revoke-staff-access" || req.url === "/api/_internal/revoke-staff-access") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email } = JSON.parse(raw || "{}");
@@ -680,7 +680,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/send-rejection-email" || req.url === "/api/__internal/send-rejection-email") && req.method === "POST") {
+          if ((req.url === "/__internal/send-rejection-email" || req.url === "/api/_internal/send-rejection-email") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email, storeName, reason } = JSON.parse(raw || "{}");
@@ -722,7 +722,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/delete-approved-staff" || req.url === "/api/__internal/delete-approved-staff") && req.method === "POST") {
+          if ((req.url === "/__internal/delete-approved-staff" || req.url === "/api/_internal/delete-approved-staff") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email } = JSON.parse(raw || "{}");
