@@ -82,6 +82,12 @@ export function MealCard({ meal, store }: MealCardProps) {
           )}
         </div>
         
+        <div className="mb-2">
+          <p className="text-lg font-bold text-primary" data-testid={`text-meal-price-${meal.id}`}>
+            ₱{parseFloat(meal.price).toFixed(2)}
+          </p>
+        </div>
+        
         {meal.description && (
           <p 
             className="text-sm text-muted-foreground line-clamp-2 mb-3"
