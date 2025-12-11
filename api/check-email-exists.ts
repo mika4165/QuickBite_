@@ -19,7 +19,7 @@ function getSupabaseAdmin() {
   console.log("Using Key:", key ? `${key.substring(0, 20)}...` : "NOT FOUND");
   
   if (!url || !key) {
-    const missing = [];
+    const missing: string[] = [];
     if (!url) missing.push("SUPABASE_URL or VITE_SUPABASE_URL");
     if (!key) missing.push("SUPABASE_SERVICE_KEY or SUPABASE_SERVICE_ROLE_KEY");
     throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
