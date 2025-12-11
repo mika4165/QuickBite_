@@ -9,7 +9,7 @@ import { getSupabaseAdmin, readBody } from "./_utils";
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers first
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS, GET");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   // Handle CORS preflight
@@ -19,18 +19,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Log for debugging - this will help us see what's happening
-  console.log("[check-email-exists] Method:", req.method, "URL:", req.url, "Body:", typeof req.body);
+  console.log("[check-email-exists] Method:", req.method, "URL:", req.url, "Body type:", typeof req.body);
 
-  // Only allow POST
-  if (req.method !== "POST") {
-    console.log("[check-email-exists] Method not allowed. Received:", req.method, "Expected: POST");
-    res.status(405).json({ error: `Method not allowed. Received: ${req.method || 'undefined'}, Expected: POST` });
+  // Accept both POST and GET (for testing)
+  const method = req.method?.toUpperCase();
+  if (method !== "POST" && method !== "GET") {
+    console.log("[check-email-exists] Method not allowed. Received:", method, "Expected: POST or GET");
+    res.status(405).json({ error: `Method not allowed. Received: ${method || 'undefined'}, Expected: POST` });
     return;
   }
 
   try {
-    const body = await readBody(req);
-    const { email } = JSON.parse(body || "{}");
+    // Handle both POST and GET requests
+    let email: string | undefined;
+    
+    if (method === "POST") {
+      const body = await readBody(req);
+      const parsed = JSON.parse(body || "{}");
+      email = parsed.email;
+    } else if (method === "GET") {
+      email = req.query.email as string;
+    }
     
     if (!email) {
       res.status(400).end("missing email");
