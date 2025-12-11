@@ -126,7 +126,7 @@ export async function apiRequest<T = any>(
     // CRITICAL CHECK: Use internal endpoint with service key to bypass RLS
     // This ensures we can check email existence even when not authenticated
     try {
-      const checkRes = await fetch("/api/_internal/check-email-exists", {
+      const checkRes = await fetch("/api/check-email-exists", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email: normalizedEmail }),
