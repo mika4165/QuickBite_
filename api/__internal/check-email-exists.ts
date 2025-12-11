@@ -1,5 +1,5 @@
 /**
- * Vercel serverless function: /api/__internal/check-email-exists
+ * Vercel serverless function: /api/_internal/check-email-exists
  * Checks if an email exists in the system (for registration/merchant application validation)
  */
 
