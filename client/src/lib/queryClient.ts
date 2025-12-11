@@ -51,20 +51,28 @@ export async function apiRequest<T = any>(
         if (retry.error) throw new Error(retry.error.message);
         authData = retry.data;
       } else if (email) {
-        const res = await fetch("/api/login-approved-staff", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
-        if (res.ok) {
-          const retry = await supabase.auth.signInWithPassword({ email, password });
-          if (retry.error) throw new Error(retry.error.message);
-          authData = retry.data;
-        } else {
-          throw new Error(error.message);
+        // Try staff login as fallback (only for approved staff)
+        try {
+          const res = await fetch("/api/login-approved-staff", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+          if (res.ok) {
+            // Staff login succeeded, retry Supabase auth
+            const retry = await supabase.auth.signInWithPassword({ email, password });
+            if (retry.error) throw new Error(retry.error.message);
+            authData = retry.data;
+          } else {
+            // Not staff or staff login failed, return original error
+            throw new Error(error.message || "Invalid login credentials");
+          }
+        } catch (staffError: any) {
+          // If staff login endpoint doesn't exist or fails, return original error
+          throw new Error(error.message || "Invalid login credentials");
         }
       } else {
-        throw new Error(error.message);
+        throw new Error(error.message || "Invalid login credentials");
       }
     }
     
