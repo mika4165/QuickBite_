@@ -250,24 +250,32 @@ export async function apiRequest<T = any>(
 
       const role = app ? "staff" : "student";
 
-      await supabase.from("users").upsert({
+      // Insert user into users table
+      const { error: userErr, data: userData } = await supabase.from("users").upsert({
         id: user.id,
         email: normalizedEmail,
         role,
       });
+      
+      if (userErr) {
+        console.error("Error saving user to database:", userErr);
+        throw new Error(`Failed to save user: ${userErr.message}`);
+      }
+      console.log("✓ User saved to database successfully");
 
       // If approved application exists, create a store for the new staff
       if (app) {
-        const { error: storeErr } = await supabase.from("stores").insert({
+        const { error: storeErr, data: storeData } = await supabase.from("stores").insert({
           name: app.store_name,
           description: app.description ?? null,
           category: app.category ?? null,
           owner_id: user.id,
         });
         if (storeErr) {
-          // Non-fatal: still return success, but surface error as throw to caller
-          throw new Error(storeErr.message);
+          console.error("Error creating store:", storeErr);
+          throw new Error(`Failed to create store: ${storeErr.message}`);
         }
+        console.log("✓ Store created successfully");
       }
     }
     return { message: "Account created" } as any;
