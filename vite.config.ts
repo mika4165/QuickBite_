@@ -133,18 +133,38 @@ export default defineConfig(async ({ mode }) => {
                 .eq("email", normalizedEmail)
                 .maybeSingle();
               
-              // Return result
+              // Return result - match the format from api/check-email-exists.ts
+              const result: { exists: boolean; type?: string; message?: string; inUsers?: boolean; userRole?: string; inAuth?: boolean; inApplications?: boolean; appStatus?: string; inApprovedStaff?: boolean } = { exists: false };
+              
+              // Prioritize users table check (source of truth)
+              if (existingUser) {
+                result.exists = true;
+                result.type = "user";
+                result.inUsers = true;
+                result.userRole = existingUser.role || "user";
+                result.message = `This email is already registered as a ${existingUser.role || "user"}.`;
+              } else if (existingApp) {
+                result.exists = true;
+                result.type = "merchant_application";
+                result.inApplications = true;
+                result.appStatus = existingApp.status || null;
+                result.message = existingApp.status === "approved" 
+                  ? "This email already has an approved merchant application."
+                  : "This email already has a pending merchant application.";
+              } else if (existingStaff) {
+                result.exists = true;
+                result.type = "approved_staff";
+                result.inApprovedStaff = true;
+                result.message = "This email is already registered as staff.";
+              } else if (existingAuthUser) {
+                // Email in Auth but not in users table - log but don't block
+                result.inAuth = true;
+                // Don't set exists = true here - only block if in users table
+              }
+              
               res.statusCode = 200;
               res.setHeader("content-type", "application/json");
-              res.end(JSON.stringify({
-                exists: !!(existingAuthUser || existingUser || existingApp || existingStaff),
-                inAuth: !!existingAuthUser,
-                inUsers: !!existingUser,
-                userRole: existingUser?.role || null,
-                inApplications: !!existingApp,
-                appStatus: existingApp?.status || null,
-                inApprovedStaff: !!existingStaff,
-              }));
+              res.end(JSON.stringify(result));
               return;
             } catch (e: any) {
               res.statusCode = 500;
