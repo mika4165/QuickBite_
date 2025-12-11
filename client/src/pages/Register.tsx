@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { UtensilsCrossed } from "lucide-react";
+import { Header } from "@/components/Header";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -87,17 +87,11 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center mx-auto mb-4">
-            <UtensilsCrossed className="h-6 w-6 text-primary-foreground" />
-          </div>
-          <h1 className="text-3xl font-bold mb-2">QuickBite</h1>
-          <p className="text-muted-foreground">Smart Meal Pre-Order System</p>
-        </div>
-
-        <Card className="p-6">
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-md">
+          <Card className="p-6">
           <div className="mb-6">
             <h2 className="text-lg font-semibold mb-2">Create Account</h2>
             <p className="text-sm text-muted-foreground">Sign up to start ordering meals</p>
@@ -166,9 +160,10 @@ export default function Register() {
           </div>
         </Card>
 
-        <p className="text-xs text-muted-foreground text-center mt-6">
-          Secure email/password authentication • Your data is stored safely
-        </p>
+          <p className="text-xs text-muted-foreground text-center mt-6">
+            Secure email/password authentication • Your data is stored safely
+          </p>
+        </div>
       </div>
     </div>
   );
