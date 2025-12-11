@@ -103,13 +103,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .select("id")
       .eq("email", email)
       .maybeSingle();
+    
     if (existingCred) {
-      await supabase
+      console.log("Updating existing approved_staff credentials");
+      const { error: updateErr } = await supabase
         .from("approved_staff")
         .update({ password_salt: salt, password_hash: hash })
         .eq("email", email);
+      if (updateErr) {
+        console.error("Error updating approved_staff:", updateErr);
+        throw new Error(`Failed to update staff credentials: ${updateErr.message}`);
+      }
+      console.log("✓ Approved staff credentials updated");
     } else {
-      await supabase.from("approved_staff").insert({ email, password_salt: salt, password_hash: hash });
+      console.log("Inserting new approved_staff credentials");
+      const { data: staffData, error: insertErr } = await supabase
+        .from("approved_staff")
+        .insert({ email, password_salt: salt, password_hash: hash })
+        .select();
+      if (insertErr) {
+        console.error("Error inserting approved_staff:", insertErr);
+        throw new Error(`Failed to save staff credentials: ${insertErr.message}`);
+      }
+      console.log("✓ Approved staff credentials saved:", staffData);
     }
     
     // Create merchant application
@@ -121,12 +137,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       status: "pending",
     } as any;
     
-    const { error } = await supabase
+    console.log("Inserting merchant application:", payload);
+    const { data: appData, error: appError } = await supabase
       .from("merchant_applications")
-      .insert(payload);
+      .insert(payload)
+      .select();
       
-    if (error) throw new Error(error.message);
+    if (appError) {
+      console.error("Error inserting merchant application:", appError);
+      throw new Error(`Failed to save merchant application: ${appError.message}`);
+    }
     
+    console.log("✓ Merchant application saved:", appData);
     res.status(200).end("ok");
   } catch (error: any) {
     res.status(500).end(String(error?.message || error));
