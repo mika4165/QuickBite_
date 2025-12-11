@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { ArrowLeft } from "lucide-react";
-import { Header } from "@/components/Header";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -53,7 +52,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       <div className="flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-md">
           <Card className="p-6">

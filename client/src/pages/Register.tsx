@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Header } from "@/components/Header";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -88,7 +87,6 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       <div className="flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-md">
           <Card className="p-6">
