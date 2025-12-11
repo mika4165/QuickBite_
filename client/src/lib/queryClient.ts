@@ -40,6 +40,7 @@ export async function apiRequest<T = any>(
       password,
     });
     if (error) {
+      // For admin users, try to create/update admin account
       if (email && admins.includes(email)) {
         const res = await fetch("/api/confirm-admin", {
           method: "POST",
@@ -51,21 +52,9 @@ export async function apiRequest<T = any>(
         if (retry.error) throw new Error(retry.error.message);
         authData = retry.data;
       } else {
-        // Check if user exists in users table but Auth login failed
-        // This could mean password is wrong or Auth user doesn't exist
-        const { data: existingUser } = await supabase
-          .from("users")
-          .select("email, role")
-          .eq("email", email)
-          .maybeSingle();
-        
-        if (existingUser) {
-          // User exists in database but Auth failed - likely wrong password
-          throw new Error("Invalid email or password. Please check your credentials and try again.");
-        } else {
-          // User doesn't exist at all
-          throw new Error("Invalid email or password. Please check your credentials and try again.");
-        }
+        // For regular users, return the original Supabase error message
+        // This provides more specific information (e.g., "Invalid login credentials" or "Email not confirmed")
+        throw new Error(error.message || "Invalid login credentials");
       }
     }
     
