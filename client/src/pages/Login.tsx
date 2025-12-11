@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { ArrowLeft } from "lucide-react";
+import { Header } from "@/components/Header";
 
 export default function Login() {
   const [email, setEmail] = useState("");
