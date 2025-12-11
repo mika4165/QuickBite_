@@ -110,37 +110,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     const normalizedEmail = String(email).toLowerCase().trim();
 
-    const result: { exists: boolean; type?: string; message?: string } = { exists: false };
+    const result: { exists: boolean; type?: string; message?: string; inUsers?: boolean; userRole?: string; inAuth?: boolean } = { exists: false };
 
-    // 1. Check Supabase Auth
-    console.log("Checking Supabase Auth...");
-    try {
-      const list = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
-      if (list.error) {
-        console.error("Error querying Supabase Auth:", list.error.message);
-        throw new Error(`Supabase Auth error: ${list.error.message}`);
-      }
-      console.log(`✓ Auth query successful, checked ${list.data?.users?.length || 0} users`);
-      
-      const existingAuthUser = list.data?.users?.find((u: any) => 
-        u.email && String(u.email).toLowerCase().trim() === normalizedEmail
-      );
-      if (existingAuthUser) {
-        console.log("Email found in Auth");
-        result.exists = true;
-        result.type = "auth";
-        result.message = "This email is already registered in our authentication system.";
-        res.status(200).json(result);
-        return;
-      }
-      console.log("✓ Email not found in Auth");
-    } catch (authError: any) {
-      console.error("Auth check failed:", authError.message);
-      throw new Error(`Failed to check Supabase Auth: ${authError.message}`);
-    }
-
-    // 2. Check users table (any role)
-    console.log("Checking users table...");
+    // 1. Check users table FIRST (this is the source of truth)
+    // Only block if email exists in users table, not just in Auth
+    console.log("Checking users table (source of truth)...");
     const { data: existingUser, error: usersError } = await supabase
       .from("users")
       .select("email, role")
@@ -153,14 +127,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     if (existingUser) {
-      console.log("Email found in users table");
+      console.log("Email found in users table - BLOCKING registration");
       result.exists = true;
       result.type = "user";
+      result.inUsers = true;
+      result.userRole = existingUser.role || "user";
       result.message = `This email is already registered as a ${existingUser.role || "user"}.`;
       res.status(200).json(result);
       return;
     }
-    console.log("✓ Email not found in users table");
+    console.log("✓ Email not found in users table - allowing registration");
+
+    // 2. Check Supabase Auth (for informational purposes, but don't block based on this alone)
+    // An email might exist in Auth from a failed/incomplete registration
+    console.log("Checking Supabase Auth (informational only)...");
+    try {
+      const list = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      if (list.error) {
+        console.warn("Warning: Could not query Supabase Auth:", list.error.message);
+        // Don't throw error, just log warning - we already checked users table
+      } else {
+        console.log(`✓ Auth query successful, checked ${list.data?.users?.length || 0} users`);
+        
+        const existingAuthUser = list.data?.users?.find((u: any) => 
+          u.email && String(u.email).toLowerCase().trim() === normalizedEmail
+        );
+        if (existingAuthUser) {
+          console.log("⚠ Email found in Auth but NOT in users table - allowing registration (incomplete registration)");
+          result.inAuth = true;
+          // Don't set exists = true here - we only block if in users table
+        } else {
+          console.log("✓ Email not found in Auth");
+        }
+      }
+    } catch (authError: any) {
+      console.warn("Warning: Auth check failed (non-blocking):", authError.message);
+      // Don't throw error - we already checked users table which is the source of truth
+    }
 
     // 3. Check merchant_applications (pending/approved)
     console.log("Checking merchant_applications...");
@@ -177,7 +180,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     if (existingApp) {
-      console.log("Email found in merchant_applications");
+      console.log("Email found in merchant_applications - BLOCKING registration");
       result.exists = true;
       result.type = "merchant_application";
       result.message = `This email already has a ${existingApp.status} merchant application.`;
@@ -200,7 +203,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     if (existingStaff) {
-      console.log("Email found in approved_staff");
+      console.log("Email found in approved_staff - BLOCKING registration");
       result.exists = true;
       result.type = "approved_staff";
       result.message = "This email is already registered as approved staff.";

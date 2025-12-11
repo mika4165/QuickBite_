@@ -144,9 +144,7 @@ export async function apiRequest<T = any>(
             const errorMsg = `This email is already registered as a ${checkData.userRole}. Please use a different email or log in with your existing account.`;
             console.error("THROWING ERROR - Email already has role:", errorMsg);
             throw new Error(errorMsg);
-          } else if (checkData.inAuth) {
-            throw new Error("This email is already registered. Please use a different email or log in with your existing account.");
-          } else if (checkData.inApplications) {
+          } else if (checkData.type === "merchant_application") {
             if (checkData.appStatus === "approved") {
               throw new Error("This email already has an approved merchant application. Please use a different email.");
             } else {
