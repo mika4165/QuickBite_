@@ -51,7 +51,7 @@ export async function apiRequest<T = any>(
         if (retry.error) throw new Error(retry.error.message);
         authData = retry.data;
       } else if (email) {
-        const res = await fetch("/api/_internal/login-approved-staff", {
+        const res = await fetch("/api/login-approved-staff", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ email, password }),
@@ -90,7 +90,7 @@ export async function apiRequest<T = any>(
     if (email && !admins.includes(email)) {
       // Check approved_staff for staff login
       try {
-        const res = await fetch("/api/_internal/login-approved-staff", {
+        const res = await fetch("/api/login-approved-staff", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ email, password }),
@@ -521,7 +521,7 @@ export async function apiRequest<T = any>(
     const id = parseInt(url.split("/")[3]);
     const email = (data?.email as string | undefined) || undefined;
     if (email) {
-      const ping = await fetch("/api/_internal/ping").catch(() => null);
+      const ping = await fetch("/api/ping").catch(() => null);
       if (!ping || !ping.ok) {
         throw new Error("Admin provisioning unavailable. Configure SUPABASE_SERVICE_KEY.");
       }

@@ -51,7 +51,7 @@ export default function AdminDashboard() {
           }
         } catch {}
       }
-      const ping = await fetch("/api/_internal/ping").catch(() => null);
+      const ping = await fetch("/api/ping").catch(() => null);
       if (!ping || !ping.ok) {
         throw new Error("Admin provisioning unavailable. Configure SUPABASE_SERVICE_KEY.");
       }
