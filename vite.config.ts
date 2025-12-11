@@ -92,7 +92,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/check-email-exists" || req.url === "/api/_internal/check-email-exists") && req.method === "POST") {
+          if ((req.url === "/__internal/check-email-exists" || req.url === "/api/_internal/check-email-exists" || req.url === "/api/check-email-exists") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email } = JSON.parse(raw || "{}");
