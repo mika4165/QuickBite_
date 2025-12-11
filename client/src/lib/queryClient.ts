@@ -41,7 +41,7 @@ export async function apiRequest<T = any>(
     });
     if (error) {
       if (email && admins.includes(email)) {
-        const res = await fetch("/api/_internal/confirm-admin", {
+        const res = await fetch("/api/confirm-admin", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ email, password }),
@@ -497,7 +497,7 @@ export async function apiRequest<T = any>(
       
       // Update user role to "student" if they exist (using internal endpoint)
       try {
-        const res = await fetch("/api/_internal/revoke-staff-access", {
+        const res = await fetch("/api/revoke-staff-access", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ email: app.email }),
@@ -523,7 +523,7 @@ export async function apiRequest<T = any>(
       if (!ping || !ping.ok) {
         throw new Error("Admin provisioning unavailable. Configure SUPABASE_SERVICE_KEY.");
       }
-        const res = await fetch("/api/_internal/delete-approved-staff", {
+        const res = await fetch("/api/delete-approved-staff", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email }),

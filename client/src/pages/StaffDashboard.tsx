@@ -150,7 +150,7 @@ export default function StaffDashboard() {
       try {
         const ping = await fetch("/api/ping");
         if (ping.ok) {
-          const res = await fetch("/api/_internal/provision-staff", {
+          const res = await fetch("/api/provision-staff", {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify(payload),
