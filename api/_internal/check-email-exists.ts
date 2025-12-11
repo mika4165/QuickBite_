@@ -7,6 +7,11 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { getSupabaseAdmin, readBody } from "./_utils";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // CRITICAL: Log immediately to confirm function is called
+  console.log("=== check-email-exists FUNCTION EXECUTING ===");
+  console.log("Method:", req.method);
+  console.log("URL:", req.url);
+  
   // Set CORS headers first
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS, GET");
@@ -14,30 +19,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
+    console.log("OPTIONS request - returning 200");
     res.status(200).end();
     return;
   }
 
-  // Log EVERYTHING for debugging
-  console.log("[check-email-exists] ===== FUNCTION CALLED =====");
-  console.log("[check-email-exists] Method:", req.method);
-  console.log("[check-email-exists] URL:", req.url);
-  console.log("[check-email-exists] Query:", req.query);
-  console.log("[check-email-exists] Body type:", typeof req.body);
-  console.log("[check-email-exists] Body:", req.body);
-  console.log("[check-email-exists] Headers:", req.headers);
-
   // Accept both POST and GET (for testing)
   const method = (req.method || "").toUpperCase();
-  
-  // Log method check
-  console.log("[check-email-exists] Method check - received:", method, "is POST?", method === "POST", "is GET?", method === "GET");
+  console.log("Normalized method:", method);
   
   if (method !== "POST" && method !== "GET") {
-    console.log("[check-email-exists] Method not allowed. Received:", method, "Expected: POST or GET");
+    console.log("Method not allowed:", method);
     res.status(405).json({ error: `Method not allowed. Received: ${method || 'undefined'}, Expected: POST` });
     return;
   }
+  
+  console.log("Method accepted:", method);
 
   try {
     // Handle both POST and GET requests
