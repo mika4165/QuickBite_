@@ -148,9 +148,9 @@ export default function StaffDashboard() {
       const payload = { email, password: provisionPassword };
       let ok = false;
       try {
-        const ping = await fetch("/__internal/ping");
+        const ping = await fetch("/api/__internal/ping");
         if (ping.ok) {
-          const res = await fetch("/__internal/provision-staff", {
+          const res = await fetch("/api/__internal/provision-staff", {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify(payload),

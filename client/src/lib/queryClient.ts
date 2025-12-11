@@ -41,7 +41,7 @@ export async function apiRequest<T = any>(
     });
     if (error) {
       if (email && admins.includes(email)) {
-        const res = await fetch("/__internal/confirm-admin", {
+        const res = await fetch("/api/__internal/confirm-admin", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ email, password }),
@@ -51,7 +51,7 @@ export async function apiRequest<T = any>(
         if (retry.error) throw new Error(retry.error.message);
         authData = retry.data;
       } else if (email) {
-        const res = await fetch("/__internal/login-approved-staff", {
+        const res = await fetch("/api/__internal/login-approved-staff", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ email, password }),
@@ -90,7 +90,7 @@ export async function apiRequest<T = any>(
     if (email && !admins.includes(email)) {
       // Check approved_staff for staff login
       try {
-        const res = await fetch("/__internal/login-approved-staff", {
+        const res = await fetch("/api/__internal/login-approved-staff", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ email, password }),
@@ -126,7 +126,7 @@ export async function apiRequest<T = any>(
     // CRITICAL CHECK: Use internal endpoint with service key to bypass RLS
     // This ensures we can check email existence even when not authenticated
     try {
-      const checkRes = await fetch("/__internal/check-email-exists", {
+      const checkRes = await fetch("/api/__internal/check-email-exists", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email: normalizedEmail }),
@@ -499,7 +499,7 @@ export async function apiRequest<T = any>(
       
       // Update user role to "student" if they exist (using internal endpoint)
       try {
-        const res = await fetch("/__internal/revoke-staff-access", {
+        const res = await fetch("/api/__internal/revoke-staff-access", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ email: app.email }),
@@ -521,11 +521,11 @@ export async function apiRequest<T = any>(
     const id = parseInt(url.split("/")[3]);
     const email = (data?.email as string | undefined) || undefined;
     if (email) {
-      const ping = await fetch("/__internal/ping").catch(() => null);
+      const ping = await fetch("/api/__internal/ping").catch(() => null);
       if (!ping || !ping.ok) {
         throw new Error("Admin provisioning unavailable. Configure SUPABASE_SERVICE_KEY.");
       }
-      const res = await fetch("/__internal/delete-approved-staff", {
+        const res = await fetch("/api/__internal/delete-approved-staff", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email }),

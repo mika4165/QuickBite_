@@ -42,7 +42,7 @@ export default function AdminDashboard() {
     try {
       setIsApproving(true);
       const email = app.email;
-      const health = await fetch("/__internal/health").catch(() => null);
+      const health = await fetch("/api/__internal/health").catch(() => null);
       if (health && health.ok) {
         try {
           const hjson = await health.json();
@@ -51,11 +51,11 @@ export default function AdminDashboard() {
           }
         } catch {}
       }
-      const ping = await fetch("/__internal/ping").catch(() => null);
+      const ping = await fetch("/api/__internal/ping").catch(() => null);
       if (!ping || !ping.ok) {
         throw new Error("Admin provisioning unavailable. Configure SUPABASE_SERVICE_KEY.");
       }
-      const res = await fetch("/__internal/provision-staff", {
+        const res = await fetch("/api/__internal/provision-staff", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email }),
@@ -72,7 +72,7 @@ export default function AdminDashboard() {
       
       // Then send email
       console.log("[Admin] Sending approval email to:", email);
-      const mail = await fetch("/__internal/send-approval-email", {
+          const mail = await fetch("/api/__internal/send-approval-email", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email, storeName: app.store_name }),
@@ -119,7 +119,7 @@ export default function AdminDashboard() {
       // Update status to rejected first
       await updateStatus.mutateAsync({ id: app.id, status: "rejected", reason: reason || undefined });
       // Try to send rejection email, but don't fail if it doesn't work
-      const mail = await fetch("/__internal/send-rejection-email", {
+          const mail = await fetch("/api/__internal/send-rejection-email", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email: app.email, storeName: app.store_name, reason: reason || undefined }),

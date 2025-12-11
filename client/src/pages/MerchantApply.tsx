@@ -22,9 +22,9 @@ export default function MerchantApply() {
 
   const submitApp = useMutation({
     mutationFn: async () => {
-      const ping = await fetch("/__internal/ping").catch(() => null);
+      const ping = await fetch("/api/__internal/ping").catch(() => null);
       if (ping && ping.ok) {
-        const res = await fetch("/__internal/submit-merchant-app", {
+        const res = await fetch("/api/__internal/submit-merchant-app", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
