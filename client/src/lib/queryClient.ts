@@ -50,29 +50,22 @@ export async function apiRequest<T = any>(
         const retry = await supabase.auth.signInWithPassword({ email, password });
         if (retry.error) throw new Error(retry.error.message);
         authData = retry.data;
-      } else if (email) {
-        // Try staff login as fallback (only for approved staff)
-        try {
-          const res = await fetch("/api/login-approved-staff", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ email, password }),
-          });
-          if (res.ok) {
-            // Staff login succeeded, retry Supabase auth
-            const retry = await supabase.auth.signInWithPassword({ email, password });
-            if (retry.error) throw new Error(retry.error.message);
-            authData = retry.data;
-          } else {
-            // Not staff or staff login failed, return original error
-            throw new Error(error.message || "Invalid login credentials");
-          }
-        } catch (staffError: any) {
-          // If staff login endpoint doesn't exist or fails, return original error
-          throw new Error(error.message || "Invalid login credentials");
-        }
       } else {
-        throw new Error(error.message || "Invalid login credentials");
+        // Check if user exists in users table but Auth login failed
+        // This could mean password is wrong or Auth user doesn't exist
+        const { data: existingUser } = await supabase
+          .from("users")
+          .select("email, role")
+          .eq("email", email)
+          .maybeSingle();
+        
+        if (existingUser) {
+          // User exists in database but Auth failed - likely wrong password
+          throw new Error("Invalid email or password. Please check your credentials and try again.");
+        } else {
+          // User doesn't exist at all
+          throw new Error("Invalid email or password. Please check your credentials and try again.");
+        }
       }
     }
     
