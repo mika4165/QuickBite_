@@ -7,8 +7,26 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { getSupabaseAdmin, readBody } from "./_utils";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.status(200).end();
+    return;
+  }
+
+  // Set CORS headers
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // Log for debugging
+  console.log("[check-email-exists] Method:", req.method, "URL:", req.url);
+
   if (req.method !== "POST") {
-    res.status(405).end("Method not allowed");
+    console.log("[check-email-exists] Method not allowed:", req.method);
+    res.status(405).end(`Method not allowed. Received: ${req.method}`);
     return;
   }
 
