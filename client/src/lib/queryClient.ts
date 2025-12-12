@@ -146,204 +146,51 @@ export async function apiRequest<T = any>(
   }
 
   if (url === "/api/merchant_applications" && method === "POST") {
-    const supabase = getSupabase();
-          console.error("BLOCKING REGISTRATION - Email found:", checkData);
-          
-          // Provide specific error message based on where email was found
-          if (checkData.inUsers && checkData.userRole) {
-            const errorMsg = `This email is already registered as a ${checkData.userRole}. Please use a different email or log in with your existing account.`;
-            console.error("THROWING ERROR - Email already has role:", errorMsg);
-            throw new Error(errorMsg);
-          } else if (checkData.type === "merchant_application") {
-            if (checkData.appStatus === "approved") {
-              throw new Error("This email already has an approved merchant application. Please use a different email.");
-            } else {
-              throw new Error("This email already has a pending merchant application. Please use a different email.");
-            }
-          } else if (checkData.inApprovedStaff) {
-            throw new Error("This email is already registered as staff. Please use a different email.");
-          } else {
-            throw new Error("This email is already registered. Please use a different email or log in with your existing account.");
-          }
-        }
-        
-        console.log("Email check passed - no existing user found for:", normalizedEmail);
-      } else {
-        // If check endpoint fails, log but continue (fallback to old method)
-        console.warn("Email check endpoint failed, falling back to direct query");
-        const checkText = await checkRes.text().catch(() => "");
-        throw new Error(`Unable to verify email availability: ${checkText || checkRes.statusText}`);
+    // Use production API endpoint for merchant application submission
+    // This ensures accounts are NOT created until admin approves
+    try {
+      const response = await fetch("/api/submit-merchant-app", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => response.statusText);
+        throw new Error(errorText || `Application submission failed: ${response.statusText}`);
       }
+
+      return { message: "Application submitted" };
     } catch (error: any) {
-      // If it's already an Error with a message, re-throw it
       if (error instanceof Error) {
         throw error;
       }
-      // Otherwise, wrap it
-      throw new Error(error?.message || "Unable to verify email availability. Please try again later.");
+      throw new Error(error?.message || "Application submission failed. Please try again.");
     }
-    
-    // Check if email is already used for merchant/staff application (any status except rejected)
-    const { data: existingApp } = await supabase
-      .from("merchant_applications")
-      .select("email, status")
-      .eq("email", normalizedEmail)
-      .in("status", ["pending", "approved"])
-      .maybeSingle();
-    
-    if (existingApp) {
-      if (existingApp.status === "approved") {
-        throw new Error("This email is already registered for an approved merchant application. Please use a different email.");
-      } else {
-        throw new Error("This email already has a pending merchant application. Please use a different email.");
-      }
-    }
-    
-    // Check if email is already in approved_staff
-    const { data: existingStaff } = await supabase
-      .from("approved_staff")
-      .select("email")
-      .eq("email", normalizedEmail)
-      .maybeSingle();
-    
-    if (existingStaff) {
-      throw new Error("This email is already registered as staff. Please use a different email.");
-    }
-    
-    // Supabase Auth will also check if email exists, but we check our tables first for better error messages
-    // Use normalized email for signup
-    const { data: signUpData, error } = await supabase.auth.signUp({
-      email: normalizedEmail,
-      password,
-    });
-    if (error) {
-      // If email already exists in auth, provide a clearer message
-      if (error.message.includes("already registered") || error.message.includes("already exists") || error.message.includes("User already registered")) {
-        throw new Error("This email is already registered. Please use a different email or log in with your existing account.");
-      }
-      throw new Error(error.message);
-    }
-    const user = signUpData.user;
-    if (user) {
-      // DOUBLE-CHECK: Verify email still doesn't exist in users table before creating
-      // This prevents race conditions where user might have been created between checks
-      const { data: doubleCheckUser } = await supabase
-        .from("users")
-        .select("email, role")
-        .eq("email", normalizedEmail)
-        .maybeSingle();
-      
-      if (doubleCheckUser) {
-        // User was created between our initial check and now - block registration
-        if (doubleCheckUser.role && (doubleCheckUser.role === "student" || doubleCheckUser.role === "staff" || doubleCheckUser.role === "admin")) {
-          throw new Error(`This email is already registered as a ${doubleCheckUser.role}. Please use a different email or log in with your existing account.`);
-        }
-        throw new Error("This email is already registered. Please use a different email or log in with your existing account.");
-      }
-      
-      // Determine role based on approved merchant application
-      const { data: app } = await supabase
-        .from("merchant_applications")
-        .select("*")
-        .eq("email", normalizedEmail)
-        .eq("status", "approved")
-        .limit(1)
-        .maybeSingle();
-
-      const role = app ? "staff" : "student";
-
-      // Insert user into users table
-      const { error: userErr, data: userData } = await supabase.from("users").upsert({
-        id: user.id,
-        email: normalizedEmail,
-        role,
-      });
-      
-      if (userErr) {
-        console.error("Error saving user to database:", userErr);
-        throw new Error(`Failed to save user: ${userErr.message}`);
-      }
-      console.log("✓ User saved to database successfully");
-
-      // If approved application exists, create a store for the new staff
-      if (app) {
-        const { error: storeErr, data: storeData } = await supabase.from("stores").insert({
-          name: app.store_name,
-          description: app.description ?? null,
-          category: app.category ?? null,
-          owner_id: user.id,
-        });
-        if (storeErr) {
-          console.error("Error creating store:", storeErr);
-          throw new Error(`Failed to create store: ${storeErr.message}`);
-        }
-        console.log("✓ Store created successfully");
-      }
-    }
-    return { message: "Account created" } as any;
   }
 
   if (url === "/api/merchant_applications" && method === "POST") {
-    const supabase = getSupabase();
-    const { email, storeName, description, phone } = data || {};
-    if (!email || !storeName) throw new Error("Email and store name required");
-    
-    // Comprehensive check: Ensure email is not used anywhere
-    // FIRST: Check if email exists in users table (any role) - this catches student/user accounts
-    const { data: existingUser } = await supabase
-      .from("users")
-      .select("email, role")
-      .eq("email", email)
-      .maybeSingle();
-    
-    if (existingUser) {
-      throw new Error("This email is already registered as a user. Please use a different email or log in with your existing account.");
-    }
-    
-    // Also check Supabase Auth to catch any registered emails
-    // Note: This requires admin access, so we'll rely on the users table check above
-    // The internal endpoint handles Auth checks more thoroughly
-    
-    // Check if email already has a pending or approved merchant application
-    const { data: existingApp } = await supabase
-      .from("merchant_applications")
-      .select("email, status")
-      .eq("email", email)
-      .in("status", ["pending", "approved"])
-      .maybeSingle();
-    
-    if (existingApp) {
-      if (existingApp.status === "approved") {
-        throw new Error("This email already has an approved merchant application. Please use a different email.");
-      } else {
-        throw new Error("This email already has a pending merchant application. Please wait for approval or use a different email.");
+    // Use production API endpoint for merchant application submission
+    // This ensures accounts are NOT created until admin approves
+    try {
+      const response = await fetch("/api/submit-merchant-app", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => response.statusText);
+        throw new Error(errorText || `Application submission failed: ${response.statusText}`);
       }
+
+      return { message: "Application submitted" };
+    } catch (error: any) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(error?.message || "Application submission failed. Please try again.");
     }
-    
-    // Check if email is already in approved_staff
-    const { data: existingStaff } = await supabase
-      .from("approved_staff")
-      .select("email")
-      .eq("email", email)
-      .maybeSingle();
-    
-    if (existingStaff) {
-      throw new Error("This email is already registered as staff. Please use a different email.");
-    }
-    
-    const payload = {
-      email: String(email),
-      store_name: String(storeName),
-      category: null,
-      description: description ? String(description) : null,
-      phone: phone ? String(phone) : null,
-      status: "pending",
-    } as any;
-    const { error } = await supabase
-      .from("merchant_applications")
-      .insert(payload);
-    if (error) throw new Error(error.message);
-    return { message: "Application submitted" } as any;
   }
 
   if (url.match(/^\/api\/staff\/orders\/\d+\/status$/) && method === "PATCH") {

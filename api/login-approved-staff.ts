@@ -74,6 +74,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
     
+    // Check if application is approved - block login if pending or rejected
+    const { data: app } = await supabase
+      .from("merchant_applications")
+      .select("status")
+      .eq("email", email)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    if (app) {
+      if (app.status === "rejected") {
+        res.status(403).end("application rejected");
+        return;
+      }
+      if (app.status === "pending") {
+        res.status(403).end("application pending approval");
+        return;
+      }
+      // Only allow login if status is "approved"
+      if (app.status !== "approved") {
+        res.status(403).end("application not approved");
+        return;
+      }
+    } else {
+      // No application found - check if they're in approved_staff (legacy or manually added)
+      // But still require approval
+      res.status(403).end("no approved application found");
+      return;
+    }
+    
     const { data: cred } = await supabase
       .from("approved_staff")
       .select("*")
