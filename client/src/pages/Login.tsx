@@ -53,11 +53,12 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-md">
           <Card className="p-6">
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold mb-2">Customer Login</h2>
+          <div className="mb-6 text-center">
+            <h2 className="text-lg font-semibold mb-2">LogIn</h2>
             <p className="text-sm text-muted-foreground">Sign in with your email and password</p>
           </div>
 
