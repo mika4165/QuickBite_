@@ -47,36 +47,8 @@ export default defineConfig(async ({ mode }) => {
               req.on("end", () => resolve(data));
             });
           }
-          async function sendEmail(to: string, subject: string, html: string, text?: string) {
-            const apiKey = getEnv("RESEND_API_KEY");
-            const from = getEnv("RESEND_FROM_EMAIL") || "no-reply@example.com";
-            if (!apiKey) {
-              throw new Error("Missing RESEND_API_KEY");
-            }
-            console.log("[Resend] Attempting to send email:", { from, to, subject });
-            const resp = await fetch("https://api.resend.com/emails", {
-              method: "POST",
-              headers: {
-                "content-type": "application/json",
-                Authorization: `Bearer ${apiKey}`,
-              },
-              body: JSON.stringify({
-                from,
-                to,
-                subject,
-                html,
-                text: text || html.replace(/<[^>]+>/g, ""),
-              }),
-            });
-            if (!resp.ok) {
-              const msg = await resp.text().catch(() => resp.statusText);
-              console.error("[Resend] Email send failed:", { status: resp.status, statusText: resp.statusText, error: msg });
-              throw new Error(`Resend API error (${resp.status}): ${msg}`);
-            }
-            const result = await resp.json().catch(() => ({}));
-            console.log("[Resend] Email sent successfully:", result);
-            return result;
-          }
+          // Email sending removed - now handled by production API endpoints
+          // All email functionality uses Supabase's built-in email system via API routes
           server.middlewares.use(async (req, res, next) => {
             const supabase = getAdmin();
             if (!supabase) return next();

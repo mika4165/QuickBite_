@@ -121,30 +121,32 @@ export async function apiRequest<T = any>(
   }
 
   if (url === "/api/register" && method === "POST") {
-    const supabase = getSupabase();
-    const { email, password } = data || {};
-    
-    if (!email || !password) {
-      throw new Error("Email and password are required");
-    }
-    
-    // Normalize email to lowercase for consistent checking
-    const normalizedEmail = String(email).toLowerCase().trim();
-    
-    // CRITICAL CHECK: Use internal endpoint with service key to bypass RLS
-    // This ensures we can check email existence even when not authenticated
+    // Use production API endpoint for registration (works in both dev and production)
+    // This ensures email sending works correctly in production deployment
     try {
-      const checkRes = await fetch("/api/check-email-exists", {
+      const response = await fetch("/api/register", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email: normalizedEmail }),
+        body: JSON.stringify(data),
       });
       
-      if (checkRes.ok) {
-        const checkData = await checkRes.json();
-        
-        // If email exists anywhere, block registration
-        if (checkData.exists) {
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(errorData.message || `Registration failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error: any) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(error?.message || "Registration failed. Please try again.");
+    }
+  }
+
+  if (url === "/api/merchant_applications" && method === "POST") {
+    const supabase = getSupabase();
           console.error("BLOCKING REGISTRATION - Email found:", checkData);
           
           // Provide specific error message based on where email was found
