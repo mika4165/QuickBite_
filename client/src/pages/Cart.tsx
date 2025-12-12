@@ -243,9 +243,9 @@ export default function Cart() {
                             return true;
                           })
                           .map((time) => (
-                            <SelectItem key={time} value={time}>
-                              {time}
-                            </SelectItem>
+                        <SelectItem key={time} value={time}>
+                          {time}
+                        </SelectItem>
                           ));
                       })()}
                     </SelectContent>

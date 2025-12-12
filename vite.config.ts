@@ -80,7 +80,7 @@ export default defineConfig(async ({ mode }) => {
           server.middlewares.use(async (req, res, next) => {
             const supabase = getAdmin();
             if (!supabase) return next();
-          if ((req.url === "/__internal/ping" || req.url === "/api/_internal/ping" || req.url === "/api/ping") && req.method === "GET") {
+          if ((req.url === "/__internal/ping" || req.url === "/api/_internal/ping") && req.method === "GET") {
             try {
               // Return 200 only if admin client is configured
               res.statusCode = 200;
@@ -92,7 +92,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/check-email-exists" || req.url === "/api/_internal/check-email-exists" || req.url === "/api/check-email-exists") && req.method === "POST") {
+          if ((req.url === "/__internal/check-email-exists" || req.url === "/api/_internal/check-email-exists") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email } = JSON.parse(raw || "{}");
@@ -133,38 +133,18 @@ export default defineConfig(async ({ mode }) => {
                 .eq("email", normalizedEmail)
                 .maybeSingle();
               
-              // Return result - match the format from api/check-email-exists.ts
-              const result: { exists: boolean; type?: string; message?: string; inUsers?: boolean; userRole?: string; inAuth?: boolean; inApplications?: boolean; appStatus?: string; inApprovedStaff?: boolean } = { exists: false };
-              
-              // Prioritize users table check (source of truth)
-              if (existingUser) {
-                result.exists = true;
-                result.type = "user";
-                result.inUsers = true;
-                result.userRole = existingUser.role || "user";
-                result.message = `This email is already registered as a ${existingUser.role || "user"}.`;
-              } else if (existingApp) {
-                result.exists = true;
-                result.type = "merchant_application";
-                result.inApplications = true;
-                result.appStatus = existingApp.status || null;
-                result.message = existingApp.status === "approved" 
-                  ? "This email already has an approved merchant application."
-                  : "This email already has a pending merchant application.";
-              } else if (existingStaff) {
-                result.exists = true;
-                result.type = "approved_staff";
-                result.inApprovedStaff = true;
-                result.message = "This email is already registered as staff.";
-              } else if (existingAuthUser) {
-                // Email in Auth but not in users table - log but don't block
-                result.inAuth = true;
-                // Don't set exists = true here - only block if in users table
-              }
-              
+              // Return result
               res.statusCode = 200;
               res.setHeader("content-type", "application/json");
-              res.end(JSON.stringify(result));
+              res.end(JSON.stringify({
+                exists: !!(existingAuthUser || existingUser || existingApp || existingStaff),
+                inAuth: !!existingAuthUser,
+                inUsers: !!existingUser,
+                userRole: existingUser?.role || null,
+                inApplications: !!existingApp,
+                appStatus: existingApp?.status || null,
+                inApprovedStaff: !!existingStaff,
+              }));
               return;
             } catch (e: any) {
               res.statusCode = 500;
@@ -172,7 +152,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/health" || req.url === "/api/_internal/health" || req.url === "/api/health") && req.method === "GET") {
+          if ((req.url === "/__internal/health" || req.url === "/api/_internal/health") && req.method === "GET") {
             try {
               const tables = ["users", "stores", "merchant_applications", "approved_staff"];
               const missing: string[] = [];
@@ -190,7 +170,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/provision-staff" || req.url === "/api/_internal/provision-staff" || req.url === "/api/provision-staff") && req.method === "POST") {
+          if ((req.url === "/__internal/provision-staff" || req.url === "/api/_internal/provision-staff") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email, password } = JSON.parse(raw || "{}");
@@ -278,7 +258,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/submit-merchant-app" || req.url === "/api/_internal/submit-merchant-app" || req.url === "/api/submit-merchant-app") && req.method === "POST") {
+          if ((req.url === "/__internal/submit-merchant-app" || req.url === "/api/_internal/submit-merchant-app") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email, storeName, description, password } = JSON.parse(raw || "{}");
@@ -401,7 +381,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/login-approved-staff" || req.url === "/api/_internal/login-approved-staff" || req.url === "/api/login-approved-staff") && req.method === "POST") {
+          if ((req.url === "/__internal/login-approved-staff" || req.url === "/api/_internal/login-approved-staff") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email, password } = JSON.parse(raw || "{}");
@@ -484,7 +464,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/confirm-admin" || req.url === "/api/_internal/confirm-admin" || req.url === "/api/confirm-admin") && req.method === "POST") {
+          if ((req.url === "/__internal/confirm-admin" || req.url === "/api/_internal/confirm-admin") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email, password } = JSON.parse(raw || "{}");
@@ -515,7 +495,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/send-approval-email" || req.url === "/api/_internal/send-approval-email" || req.url === "/api/send-approval-email") && req.method === "POST") {
+          if ((req.url === "/__internal/send-approval-email" || req.url === "/api/_internal/send-approval-email") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email, storeName } = JSON.parse(raw || "{}");
@@ -606,7 +586,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/revoke-staff-access" || req.url === "/api/_internal/revoke-staff-access" || req.url === "/api/revoke-staff-access") && req.method === "POST") {
+          if ((req.url === "/__internal/revoke-staff-access" || req.url === "/api/_internal/revoke-staff-access") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email } = JSON.parse(raw || "{}");
@@ -700,7 +680,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/send-rejection-email" || req.url === "/api/_internal/send-rejection-email" || req.url === "/api/send-rejection-email") && req.method === "POST") {
+          if ((req.url === "/__internal/send-rejection-email" || req.url === "/api/_internal/send-rejection-email") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email, storeName, reason } = JSON.parse(raw || "{}");
@@ -742,7 +722,7 @@ export default defineConfig(async ({ mode }) => {
               return;
             }
           }
-          if ((req.url === "/__internal/delete-approved-staff" || req.url === "/api/_internal/delete-approved-staff" || req.url === "/api/delete-approved-staff") && req.method === "POST") {
+          if ((req.url === "/__internal/delete-approved-staff" || req.url === "/api/_internal/delete-approved-staff") && req.method === "POST") {
             try {
               const raw = await readBody(req);
               const { email } = JSON.parse(raw || "{}");

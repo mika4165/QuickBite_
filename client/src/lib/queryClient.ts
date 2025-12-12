@@ -19,6 +19,22 @@ export async function apiRequest<T = any>(
     const { email, password } = data || {};
     const admins = (import.meta.env.VITE_ADMIN_EMAILS as string | undefined)?.split(",").map(s => s.trim()).filter(Boolean) || [];
     
+    // Check for rejected applications BEFORE attempting login
+    if (email && !admins.includes(email)) {
+      const { data: rejectedApp } = await supabase
+        .from("merchant_applications")
+        .select("status")
+        .eq("email", email)
+        .eq("status", "rejected")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (rejectedApp) {
+        throw new Error("Your merchant application has been rejected. You cannot log in with this account.");
+      }
+    }
+    
     let { data: authData, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -34,13 +50,53 @@ export async function apiRequest<T = any>(
         const retry = await supabase.auth.signInWithPassword({ email, password });
         if (retry.error) throw new Error(retry.error.message);
         authData = retry.data;
+      } else if (email) {
+        // Try staff login as fallback (only for approved staff)
+        try {
+          const res = await fetch("/api/login-approved-staff", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+          if (res.ok) {
+            // Staff login succeeded, retry Supabase auth
+            const retry = await supabase.auth.signInWithPassword({ email, password });
+            if (retry.error) throw new Error(retry.error.message);
+            authData = retry.data;
+          } else {
+            // Not staff or staff login failed, return original error
+            throw new Error(error.message || "Invalid login credentials");
+          }
+        } catch (staffError: any) {
+          // If staff login endpoint doesn't exist or fails, return original error
+          throw new Error(error.message || "Invalid login credentials");
+        }
       } else {
         throw new Error(error.message || "Invalid login credentials");
       }
     }
     
+    // Double-check for rejected applications after successful auth (in case they somehow got through)
+    if (email && !admins.includes(email) && authData?.user) {
+      const { data: rejectedApp } = await supabase
+        .from("merchant_applications")
+        .select("status")
+        .eq("email", email)
+        .eq("status", "rejected")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (rejectedApp) {
+        // Sign them out immediately
+        await supabase.auth.signOut();
+        throw new Error("Your merchant application has been rejected. You cannot log in with this account.");
+      }
+    }
+    
     let isApprovedStaff = false;
     if (email && !admins.includes(email)) {
+      // Check approved_staff for staff login
       try {
         const res = await fetch("/api/login-approved-staff", {
           method: "POST",
@@ -154,15 +210,9 @@ export async function apiRequest<T = any>(
     
     // Supabase Auth will also check if email exists, but we check our tables first for better error messages
     // Use normalized email for signup
-    // Note: email_confirm is set to true to allow immediate login (if email confirmation is disabled in Supabase)
     const { data: signUpData, error } = await supabase.auth.signUp({
       email: normalizedEmail,
       password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        // This doesn't bypass Supabase's email confirmation setting,
-        // but it helps if confirmation is disabled
-      },
     });
     if (error) {
       // If email already exists in auth, provide a clearer message
@@ -236,55 +286,51 @@ export async function apiRequest<T = any>(
     const { email, storeName, description, phone } = data || {};
     if (!email || !storeName) throw new Error("Email and store name required");
     
-    // Normalize email to lowercase for consistent checking
-    const normalizedEmail = String(email).toLowerCase().trim();
+    // Comprehensive check: Ensure email is not used anywhere
+    // FIRST: Check if email exists in users table (any role) - this catches student/user accounts
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("email, role")
+      .eq("email", email)
+      .maybeSingle();
     
-    // Use internal endpoint with service key to bypass RLS and check email existence
-    // This ensures we can check email existence even when not authenticated
-    try {
-      const checkRes = await fetch("/api/check-email-exists", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email: normalizedEmail }),
-      });
-      
-      if (checkRes.ok) {
-        const checkData = await checkRes.json();
-        
-        // If email exists anywhere, block merchant application
-        if (checkData.exists) {
-          // Provide specific error message based on where email was found
-          if (checkData.inUsers && checkData.userRole) {
-            throw new Error(`This email is already registered as a ${checkData.userRole}. Please use a different email or log in with your existing account.`);
-          } else if (checkData.type === "merchant_application") {
-            if (checkData.appStatus === "approved") {
-              throw new Error("This email already has an approved merchant application. Please use a different email.");
-            } else {
-              throw new Error("This email already has a pending merchant application. Please wait for approval or use a different email.");
-            }
-          } else if (checkData.inApprovedStaff) {
-            throw new Error("This email is already registered as staff. Please use a different email.");
-          } else {
-            throw new Error("This email is already registered. Please use a different email or log in with your existing account.");
-          }
-        }
+    if (existingUser) {
+      throw new Error("This email is already registered as a user. Please use a different email or log in with your existing account.");
+    }
+    
+    // Also check Supabase Auth to catch any registered emails
+    // Note: This requires admin access, so we'll rely on the users table check above
+    // The internal endpoint handles Auth checks more thoroughly
+    
+    // Check if email already has a pending or approved merchant application
+    const { data: existingApp } = await supabase
+      .from("merchant_applications")
+      .select("email, status")
+      .eq("email", email)
+      .in("status", ["pending", "approved"])
+      .maybeSingle();
+    
+    if (existingApp) {
+      if (existingApp.status === "approved") {
+        throw new Error("This email already has an approved merchant application. Please use a different email.");
       } else {
-        // If check endpoint fails, log but continue (fallback to direct query)
-        console.warn("Email check endpoint failed, falling back to direct query");
-        const checkText = await checkRes.text().catch(() => "");
-        throw new Error(`Unable to verify email availability: ${checkText || checkRes.statusText}`);
+        throw new Error("This email already has a pending merchant application. Please wait for approval or use a different email.");
       }
-    } catch (error: any) {
-      // If it's already an Error with a message, re-throw it
-      if (error instanceof Error) {
-        throw error;
-      }
-      // Otherwise, wrap it
-      throw new Error(error?.message || "Unable to verify email availability. Please try again later.");
+    }
+    
+    // Check if email is already in approved_staff
+    const { data: existingStaff } = await supabase
+      .from("approved_staff")
+      .select("email")
+      .eq("email", email)
+      .maybeSingle();
+    
+    if (existingStaff) {
+      throw new Error("This email is already registered as staff. Please use a different email.");
     }
     
     const payload = {
-      email: normalizedEmail,
+      email: String(email),
       store_name: String(storeName),
       category: null,
       description: description ? String(description) : null,
